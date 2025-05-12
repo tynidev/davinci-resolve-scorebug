@@ -7,14 +7,15 @@ A collection of Lua scripts for automating sports score displays and highlight c
 ## Overview
 
 This toolset helps video editors automate the scoring workflow for sports videos in DaVinci Resolve. The scripts work together to:
-- Place and update team scores on a scorebug overlay
+- Place and update team scores on a scorebug overlay with team names from the scorebug
 - Create highlight regions around scoring events
-- Manage timeline markers for clean organization
+- Manage timeline markers with descriptive, automatic labeling
+- Display game time with automatic half/full time indicators
 
 ## Scripts Included
 
 - **All Score Processing**: Main script that runs the complete workflow in sequence
-- **Set Scorebug**: Updates scores on the scorebug based on colored markers
+- **Set Scorebug**: Updates scores on the scorebug based on colored markers and renames markers with team names
 - **Score Highlights**: Converts markers into highlight regions
 - **Whiteout Markers**: Creates a clean timeline by converting colored markers to white
 - **Restore Marker Colors**: Reverts whiteout markers back to their original colors
@@ -46,7 +47,32 @@ Run the included PowerShell script `install_scripts.ps1` to automatically instal
 <img alt="Example Timeline" src="./example_timeline.png" width="800px">
 
 3. Run `All Score Processing.lua` from the Fusion Scripts menu
-4. The script will update your scorebug, create highlight regions, and clean up the timeline
+4. The script will:
+   - Update your scorebug with proper score values
+   - Automatically rename markers with team names and scores (e.g., "Seattle 1", "Portland 2")
+   - Label time markers as "FIRST", "HALF", "SECOND", and "FULL"
+   - Create time display with proper game timing between periods
+   - Create highlight regions around scoring events
+   - Clean up the timeline
+
+## Features
+
+### Automatic Marker Renaming
+Score markers are automatically renamed with the corresponding team name from the scorebug (e.g., "Seattle 1")
+
+### Intelligent Time Display
+Game time automatically:
+- Starts at 00:00 at first marker
+- Counts up to halftime
+- Shows "HALF" at the halftime marker
+- Continues from previous time at second half
+- Shows "FULL" at the full time marker
+
+### Customizable Display Options
+Edit the `utils.lua` file to customize:
+- Marker colors
+- Display formats
+- Time formatting options (MM:SS, M:SS, etc.)
 
 ## License
 
