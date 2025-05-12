@@ -1,0 +1,25 @@
+# DaVinci Resolve temporary files
+*.settings.backup
+*.drb
+*.drcb
+*.drcbak
+*.tmp
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# PowerShell logs
+*.log
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*

@@ -1,0 +1,668 @@
+{
+	Tools = ordered() {
+		MLS_Scorebug = GroupOperator {
+			CtrlWZoom = false,
+			NameSet = true,
+			CustomData = {
+				Path = {
+					Map = {
+					}
+				},
+			},
+			Inputs = ordered() {
+				Input12 = InstanceInput {
+					SourceOp = "LEAGUE_TITLE_2",
+					Source = "StyledText",
+					Name = "League Title",
+				},
+				Input1 = InstanceInput {
+					SourceOp = "GAME_TIME_2",
+					Source = "StyledText",
+					Expression = ": first=0; half=100; second=200; full=300; fr = comp:GetPrefs(\"Comp.FrameFormat.Rate\"); if time < first then    return Text(\"00:00\");elseif time >= first and time < half then    reltime = time - first;     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );elseif time >= half and time < second then    return Text(\"HALF\");elseif time >= second and time < full then    reltime = (time - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );else    reltime = (full - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );end",
+					Name = "Game Time",
+				},
+				Input2 = InstanceInput {
+					SourceOp = "LEFT_COLOR_2",
+					Source = "TopLeftRed",
+					Name = "Left Team Color",
+					ControlGroup = 2,
+					Default = 0.9058823529412,
+				},
+				Input3 = InstanceInput {
+					SourceOp = "LEFT_COLOR_2",
+					Source = "TopLeftGreen",
+					ControlGroup = 2,
+					Default = 0.4549019607843,
+				},
+				Input4 = InstanceInput {
+					SourceOp = "LEFT_COLOR_2",
+					Source = "TopLeftBlue",
+					ControlGroup = 2,
+					Default = 0,
+				},
+				Input5 = InstanceInput {
+					SourceOp = "LEFT_NAME_2",
+					Source = "StyledText",
+					Name = "Left Team Name",
+				},
+				Input6 = InstanceInput {
+					SourceOp = "LEFT_SCORE_2",
+					Source = "StyledText",
+					Name = "Left Team Score",
+				},
+				Input9 = InstanceInput {
+					SourceOp = "RIGHT_COLOR_2",
+					Source = "TopLeftRed",
+					Name = "Right Team Color",
+					ControlGroup = 7,
+					Default = 0.5725490196078,
+				},
+				Input10 = InstanceInput {
+					SourceOp = "RIGHT_COLOR_2",
+					Source = "TopLeftGreen",
+					ControlGroup = 7,
+					Default = 0.7803921568627,
+				},
+				Input11 = InstanceInput {
+					SourceOp = "RIGHT_COLOR_2",
+					Source = "TopLeftBlue",
+					ControlGroup = 7,
+					Default = 1,
+				},
+				Input8 = InstanceInput {
+					SourceOp = "RIGHT_NAME_2",
+					Source = "StyledText",
+					Name = "Right Team Name",
+				},
+				Input7 = InstanceInput {
+					SourceOp = "RIGHT_SCORE_2",
+					Source = "StyledText",
+					Name = "Right Team Score",
+				}
+			},
+			Outputs = {
+				MainOutput1 = InstanceOutput {
+					SourceOp = "Merge10_2",
+					Source = "Output",
+				}
+			},
+			ViewInfo = GroupInfo {
+				Pos = { 275, 49.5 },
+				Flags = {
+					AllowPan = false,
+					GridSnap = true,
+					AutoSnap = true,
+					RemoveRouters = true
+				},
+				Size = { 1226, 262.887, 613, 24.2424 },
+				Direction = "Horizontal",
+				PipeStyle = "Direct",
+				Scale = 1,
+				Offset = { 0, 0 }
+			},
+			Tools = ordered() {
+				team_left_bg_mask_2 = RectangleMask {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.137507339763667, 0.9 }, },
+						Width = Input { Value = 0.025, },
+						Height = Input { Value = 0.045, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -220, 7.75718 } },
+				},
+				GAME_TIME_2 = TextPlus {
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.09, 0.9 }, },
+						LayoutRotation = Input { Value = 1, },
+						TransformRotation = Input { Value = 1, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input { Expression = ": first=0; half=100; second=200; full=300; fr = comp:GetPrefs(\"Comp.FrameFormat.Rate\"); if time < first then    return Text(\"00:00\");elseif time >= first and time < half then    reltime = time - first;     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );elseif time >= half and time < second then    return Text(\"HALF\");elseif time >= second and time < full then    reltime = (time - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );else    reltime = (full - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );end", },
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Semibold", },
+						Size = Input { Value = 0.03, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -385, 40.7573 } },
+				},
+				LEFT_COLOR_2 = Background {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "team_left_bg_mask_2",
+							Source = "Mask",
+						},
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftBlue = Input { Value = 1, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -220, 40.7573 } },
+				},
+				LEFT_NAME_2 = TextPlus {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.157287, 0.9 }, },
+						LayoutRotation = Input { Value = 1, },
+						CharacterSpacing = Input { Value = 0.97, },
+						TransformRotation = Input { Value = 1, },
+						Red1 = Input { Value = 0, },
+						Green1 = Input { Value = 0, },
+						Blue1 = Input { Value = 0, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input { Value = "SPU", },
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Semibold", },
+						Size = Input { Value = 0.03, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalLeftCenterRight = Input { Value = -1, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -110, 40.7573 } },
+				},
+				LEFT_SCORE_2 = TextPlus {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.240287, 0.9 }, },
+						LayoutRotation = Input { Value = 1, },
+						CharacterSpacing = Input { Value = 0.97, },
+						TransformRotation = Input { Value = 1, },
+						Red1 = Input { Value = 0, },
+						Green1 = Input { Value = 0, },
+						Blue1 = Input { Value = 0, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input {
+							SourceOp = "LEFT_SCORE_2StyledText",
+							Source = "Value",
+						},
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Semibold", },
+						Size = Input { Value = 0.03, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 0, 40.7573 } },
+				},
+				Merge4_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "TransparentBG_1_1",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "GAME_TIME_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -385, 73.7572 } },
+				},
+				TransparentBG_1_1 = Background {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftAlpha = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -550, 73.7572 } },
+				},
+				Merge5_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge11_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "LEFT_NAME_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -110, 73.7572 } },
+				},
+				Merge7_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge5_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "LEFT_SCORE_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 0, 73.7572 } },
+				},
+				Merge11_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge4_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "LEFT_COLOR_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { -220, 73.7572 } },
+				},
+				RIGHT_SCORE_2 = TextPlus {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.269, 0.9 }, },
+						LayoutRotation = Input { Value = 1, },
+						CharacterSpacing = Input { Value = 0.97, },
+						TransformRotation = Input { Value = 1, },
+						Red1 = Input { Value = 0, },
+						Green1 = Input { Value = 0, },
+						Blue1 = Input { Value = 0, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input {
+							SourceOp = "RIGHT_SCORE_2StyledText",
+							Source = "Value",
+						},
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Semibold", },
+						Size = Input { Value = 0.03, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 165, 40.7573 } },
+				},
+				Merge8_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge7_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "RIGHT_SCORE_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 165, 73.7572 } },
+				},
+				Merge6_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge8_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "RIGHT_NAME_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 275, 73.7572 } },
+				},
+				RIGHT_NAME_2 = TextPlus {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.342287, 0.9 }, },
+						LayoutRotation = Input { Value = 1, },
+						CharacterSpacing = Input { Value = 0.97, },
+						TransformRotation = Input { Value = 1, },
+						Red1 = Input { Value = 0, },
+						Green1 = Input { Value = 0, },
+						Blue1 = Input { Value = 0, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input { Value = "OPP", },
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Semibold", },
+						Size = Input { Value = 0.03, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalLeftCenterRight = Input { Value = 1, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 275, 40.7573 } },
+				},
+				team_name_bg_mask_2 = RectangleMask {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.25, 0.9 }, },
+						Width = Input { Value = 0.2, },
+						Height = Input { Value = 0.045, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 330, 139.758 } },
+				},
+				time_box_mask_2 = RectangleMask {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.09, 0.9 }, },
+						Width = Input { Value = 0.07, },
+						Height = Input { Value = 0.045, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, 139.758 } },
+				},
+				RIGHT_COLOR_2 = Background {
+					CtrlWZoom = false,
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "team_right_bg_mask_2",
+							Source = "Mask",
+						},
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftRed = Input { Value = 1, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 385, 40.7573 } },
+				},
+				Merge2_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge6_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "RIGHT_COLOR_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 385, 73.7572 } },
+				},
+				team_right_bg_mask_2 = RectangleMask {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.362507, 0.9 }, },
+						Width = Input { Value = 0.025, },
+						Height = Input { Value = 0.045, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 385, 7.75718 } },
+				},
+				team_name_bg_2 = Background {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "team_name_bg_mask_2",
+							Source = "Mask",
+						},
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftRed = Input { Value = 0.9411764705882, },
+						TopLeftGreen = Input { Value = 0.9529411764706, },
+						TopLeftBlue = Input { Value = 0.9490196078431, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 330, 172.758 } },
+				},
+				time_box_bg_2 = Background {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "time_box_mask_2",
+							Source = "Mask",
+						},
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, 172.758 } },
+				},
+				team_sep_bg_2 = Background {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "team_sep_mask_2",
+							Source = "Mask",
+						},
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftRed = Input { Value = 0.7411764705882, },
+						TopLeftGreen = Input { Value = 0.7411764705882, },
+						TopLeftBlue = Input { Value = 0.7411764705882, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, 172.758 } },
+				},
+				team_sep_mask_2 = RectangleMask {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.254507, 0.9 }, },
+						Width = Input { Value = 0.0017, },
+						Height = Input { Value = 0.045, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, 139.758 } },
+				},
+				TransparentBG_2 = Background {
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						TopLeftAlpha = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 0, 205.758 } },
+				},
+				Merge3_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge1_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "team_sep_bg_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, 205.758 } },
+				},
+				Merge1_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "time_box_merge_1",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "team_name_bg_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 330, 205.758 } },
+				},
+				time_box_merge_1 = Merge {
+					CtrlWShown = false,
+					NameSet = true,
+					Inputs = {
+						Background = Input {
+							SourceOp = "TransparentBG_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "time_box_bg_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, 205.758 } },
+				},
+				Merge10_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge3_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "Merge9_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 550, 205.758 } },
+				},
+				Merge9_2 = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "Merge2_2",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "LEAGUE_TITLE_2",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 550, 73.7572 } },
+				},
+				LEAGUE_TITLE_2 = TextPlus {
+					NameSet = true,
+					Inputs = {
+						GlobalOut = Input { Value = 5583, },
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+						Center = Input { Value = { 0.055676, 0.938576 }, },
+						LayoutRotation = Input { Value = 1, },
+						TransformRotation = Input { Value = 1, },
+						Softness1 = Input { Value = 1, },
+						StyledText = Input { Value = "UCSC - 2015 Boys - Spring 2025 - Spurs vs Opp.", },
+						Font = Input { Value = "Open Sans", },
+						Style = Input { Value = "Bold", },
+						Size = Input { Value = 0.0197, },
+						VerticalJustificationNew = Input { Value = 3, },
+						HorizontalLeftCenterRight = Input { Value = -1, },
+						HorizontalJustificationNew = Input { Value = 3, }
+					},
+					ViewInfo = OperatorInfo { Pos = { 550, 40.7573 } },
+				}
+			},
+		},
+		LEFT_SCORE_2StyledText = BezierSpline {
+			SplineColor = { Red = 237, Green = 142, Blue = 243 },
+			NameSet = true,
+			CustomData = {
+				Path = {
+					Map = {
+					}
+				}
+			},
+			KeyFrames = {
+				[0] = { 0, Flags = { Linear = true }, Value = Text {
+						Value = "0"
+					} }
+			}
+		},
+		RIGHT_SCORE_2StyledText = BezierSpline {
+			SplineColor = { Red = 237, Green = 142, Blue = 243 },
+			CtrlWZoom = false,
+			NameSet = true,
+			CustomData = {
+				Path = {
+					Map = {
+					}
+				}
+			},
+			KeyFrames = {
+				[0] = { 0, Flags = { Linear = true }, Value = Text {
+						Value = "0"
+					} }
+			}
+		}
+	}
+}
