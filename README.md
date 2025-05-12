@@ -2,6 +2,8 @@
 
 A collection of Lua scripts for automating sports score displays and highlight creation in DaVinci Resolve.
 
+<img alt="Example Scorebug" src="./example_scorebug.png" width="800px">
+
 ## Overview
 
 This toolset helps video editors automate the scoring workflow for sports videos in DaVinci Resolve. The scripts work together to:
@@ -40,6 +42,9 @@ Run the included PowerShell script `install_scripts.ps1` to automatically instal
    - Cream markers: Time indicators (first half, halftime, second half, full time)
    - Blue markers: Team on the *LEFT* of scoreboard scores
    - Red markers: Team on the *RIGHT* of scoreboard scores
+
+<img alt="Example Timeline" src="./example_timeline.png" width="800px">
+
 3. Run `All Score Processing.lua` from the Fusion Scripts menu
 4. The script will update your scorebug, create highlight regions, and clean up the timeline
 
