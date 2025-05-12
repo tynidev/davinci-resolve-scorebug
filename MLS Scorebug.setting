@@ -18,7 +18,6 @@
 				Input1 = InstanceInput {
 					SourceOp = "GAME_TIME_2",
 					Source = "StyledText",
-					Expression = ": first=0; half=100; second=200; full=300; fr = comp:GetPrefs(\"Comp.FrameFormat.Rate\"); if time < first then    return Text(\"00:00\");elseif time >= first and time < half then    reltime = time - first;     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );elseif time >= half and time < second then    return Text(\"HALF\");elseif time >= second and time < full then    reltime = (time - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );else    reltime = (full - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );end",
 					Name = "Game Time",
 				},
 				Input2 = InstanceInput {
@@ -129,7 +128,10 @@
 						LayoutRotation = Input { Value = 1, },
 						TransformRotation = Input { Value = 1, },
 						Softness1 = Input { Value = 1, },
-						StyledText = Input { Expression = ": first=0; half=100; second=200; full=300; fr = comp:GetPrefs(\"Comp.FrameFormat.Rate\"); if time < first then    return Text(\"00:00\");elseif time >= first and time < half then    reltime = time - first;     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );elseif time >= half and time < second then    return Text(\"HALF\");elseif time >= second and time < full then    reltime = (time - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );else    reltime = (full - second) + (half - first);     secs = floor((reltime/fr)%60);     mins = floor((reltime/fr)/60);     return Text(string.format(\"%02d\", mins) .. \":\" .. string.format(\"%02d\", secs) );end", },
+						StyledText = Input {
+							SourceOp = "GAME_TIME_2StyledText",
+							Source = "Value",
+						},
 						Font = Input { Value = "Open Sans", },
 						Style = Input { Value = "Semibold", },
 						Size = Input { Value = 0.03, },
@@ -151,7 +153,7 @@
 						Height = Input { Value = 1080, },
 						UseFrameFormatSettings = Input { Value = 1, },
 						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
-						TopLeftBlue = Input { Value = 1, }
+						TopLeftBlue = Input { Value = 0.498039215686275, }
 					},
 					ViewInfo = OperatorInfo { Pos = { -220, 40.7573 } },
 				},
@@ -416,7 +418,9 @@
 						Height = Input { Value = 1080, },
 						UseFrameFormatSettings = Input { Value = 1, },
 						["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
-						TopLeftRed = Input { Value = 1, }
+						TopLeftRed = Input { Value = 1, },
+						TopLeftGreen = Input { Value = 1, },
+						TopLeftBlue = Input { Value = 1, }
 					},
 					ViewInfo = OperatorInfo { Pos = { 385, 40.7573 } },
 				},
@@ -610,6 +614,7 @@
 					ViewInfo = OperatorInfo { Pos = { 550, 73.7572 } },
 				},
 				LEAGUE_TITLE_2 = TextPlus {
+					CtrlWShown = false,
 					NameSet = true,
 					Inputs = {
 						GlobalOut = Input { Value = 5583, },
@@ -633,9 +638,18 @@
 				}
 			},
 		},
+		GAME_TIME_2StyledText = BezierSpline {
+			SplineColor = { Red = 237, Green = 142, Blue = 243 },
+			CtrlWZoom = false,
+			NameSet = true,
+			KeyFrames = {
+				[0] = { 0, Flags = { Linear = true, LockedY = true }, Value = Text {
+						Value = "00:00"
+					} }
+			}
+		},
 		LEFT_SCORE_2StyledText = BezierSpline {
 			SplineColor = { Red = 237, Green = 142, Blue = 243 },
-			NameSet = true,
 			CustomData = {
 				Path = {
 					Map = {
@@ -651,7 +665,6 @@
 		RIGHT_SCORE_2StyledText = BezierSpline {
 			SplineColor = { Red = 237, Green = 142, Blue = 243 },
 			CtrlWZoom = false,
-			NameSet = true,
 			CustomData = {
 				Path = {
 					Map = {
