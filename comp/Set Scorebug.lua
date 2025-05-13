@@ -40,6 +40,7 @@ local CONFIG = utils.CONFIG
 local pm, pr, tl, fps
 local sbcomp
 local leftScoreNode, rightScoreNode, gameTimeNode
+local leftNameNode, rightNameNode -- Added variables for team name tools
 local timeMarkers, timeFrameNumbers
 local leftScoreMarkers, leftScoreFrameNumbers
 local rightScoreMarkers, rightScoreFrameNumbers
@@ -59,7 +60,7 @@ local function findScorebugComp()
         end
     end
     
-    print("Warning: Could not find '" .. CONFIG.COMPOSITION_NAME .. "' in timeline")
+    print("[WARNING] Could not find '" .. CONFIG.COMPOSITION_NAME .. "' in timeline")
     return nil
 end
 
@@ -69,22 +70,23 @@ end
   @return boolean - True if initialization successful, false otherwise
 ]]
 local function Initialize()
+    print("[SECTION] INITIALIZATION")
     -- Initialize core Resolve objects
     pm = resolve:GetProjectManager()
     if not pm then
-        print("Error: Failed to get Project Manager")
+        print("[ERROR] Failed to get Project Manager")
         return false
     end
 
     pr = pm:GetCurrentProject()
     if not pr then
-        print("Error: No project is currently open")
+        print("[ERROR] No project is currently open")
         return false
     end
 
     tl = pr:GetCurrentTimeline()
     if not tl then
-        print("Error: No timeline is currently active")
+        print("[ERROR] No timeline is currently active")
         return false
     end
 
@@ -92,7 +94,7 @@ local function Initialize()
     fps = pr:GetSetting("timelineFrameRate")
     if not fps or fps == 0 then 
         fps = 24  -- Default to 24fps if unable to get setting
-        print("Warning: Unable to determine project frame rate, using default of 24fps")
+        print("[WARNING] Unable to determine project frame rate, using default of 24fps")
     else
         print("Project frame rate: " .. fps .. " fps")
     end
@@ -100,34 +102,45 @@ local function Initialize()
     -- Find and store scorebug composition
     sbcomp = findScorebugComp()
     if not sbcomp then
-        print("Error: Could not find scorebug composition")
+        print("[ERROR] Could not find scorebug composition")
         return false
     end
     
-    -- Find and store required text elements
+    -- Find and store required tools in the scorebug composition
     leftScoreNode = sbcomp:FindTool(CONFIG.LEFT_SCORE_ELEMENT)
     if not leftScoreNode then
-        print("Error: Could not find left score element '" .. CONFIG.LEFT_SCORE_ELEMENT .. "'")
+        print("[ERROR] Could not find left score element '" .. CONFIG.LEFT_SCORE_ELEMENT .. "'")
         return false
     end
     
     rightScoreNode = sbcomp:FindTool(CONFIG.RIGHT_SCORE_ELEMENT)
     if not rightScoreNode then
-        print("Error: Could not find right score element '" .. CONFIG.RIGHT_SCORE_ELEMENT .. "'")
+        print("[ERROR] Could not find right score element '" .. CONFIG.RIGHT_SCORE_ELEMENT .. "'")
         return false
     end
     
     gameTimeNode = sbcomp:FindTool(CONFIG.GAME_TIME_ELEMENT)
     if not gameTimeNode then
-        print("Error: Could not find game time element '" .. CONFIG.GAME_TIME_ELEMENT .. "'")
+        print("[ERROR] Could not find game time element '" .. CONFIG.GAME_TIME_ELEMENT .. "'")
         return false
+    end
+    
+    -- Find and store team name elements
+    leftNameNode = sbcomp:FindTool(CONFIG.LEFT_NAME_ELEMENT)
+    if not leftNameNode then
+        print("[WARNING] Could not find left team name element '" .. CONFIG.LEFT_NAME_ELEMENT .. "'")
+    end
+    
+    rightNameNode = sbcomp:FindTool(CONFIG.RIGHT_NAME_ELEMENT)
+    if not rightNameNode then
+        print("[WARNING] Could not find right team name element '" .. CONFIG.RIGHT_NAME_ELEMENT .. "'")
     end
     
     -- Get markers by color
     print("Loading time markers...")
     timeMarkers, timeFrameNumbers = GetMarkersByColor(tl, CONFIG.GAME_MARKERS.TIME_MARKERS)
     if #timeFrameNumbers < 4 then
-        print("Error: Found only " .. #timeFrameNumbers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
+        print("[ERROR] Found only " .. #timeFrameNumbers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
         return false
     end
     print("Found " .. #timeFrameNumbers .. " time markers")
@@ -150,13 +163,12 @@ end
   @return string - The team name or a default value if not found
 ]]
 local function GetTeamName(side)
-    local elementName = (side:upper() == "LEFT") and CONFIG.LEFT_NAME_ELEMENT or CONFIG.RIGHT_NAME_ELEMENT
     local defaultName = (side:upper() == "LEFT") and "Home" or "Away"
+    local tool = (side:upper() == "LEFT") and leftNameNode or rightNameNode
     
-    local tool = sbcomp:FindTool(elementName)
+    -- Return default if the tool wasn't found during initialization
     if not tool then
-        print("Error: Could not find tool '" .. elementName .. "'")
-        return false
+        return defaultName
     end
 
     local teamName = tool:GetInput("StyledText")
@@ -178,7 +190,7 @@ end
 local function UpdateMarkerName(frame, marker, newName)
     -- Delete the original marker
     if not tl:DeleteMarkerAtFrame(frame) then
-        print("Error: Failed to delete marker at frame " .. frame)
+        print("[ERROR] Failed to delete marker at frame " .. frame)
         return false
     end
     
@@ -191,7 +203,7 @@ local function UpdateMarkerName(frame, marker, newName)
         marker.duration,    -- duration
         marker.customData   -- customData (if any)
     ) then
-        print("Error: Failed to add marker at frame " .. frame)
+        print("[ERROR] Failed to add marker at frame " .. frame)
         return false
     end
     
@@ -206,7 +218,7 @@ end
   @return number - The final score
 ]]
 local function ProcessScores(side, color)
-    print("----------------- " .. side .. " -----------------")
+    print("[SECTION] " .. side .. " TEAM SCORES")
     
     -- Use pre-loaded score markers
     local markers = side:upper() == "LEFT" and leftScoreMarkers or rightScoreMarkers
@@ -237,7 +249,7 @@ local function ProcessScores(side, color)
         if UpdateMarkerName(frame, markers[frame], newMarkerName) then
             print("Frame: " .. frame .. ", Score: " .. score .. ", Updated name: " .. newMarkerName)
         else
-            print("Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
+            print("[ERROR] Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
         end
     end
     
@@ -249,7 +261,7 @@ end
   @return number - The number of time markers found
 ]]
 local function SetGlobalTimes()
-    print("----------------- TIMES -----------------")
+    print("[SECTION] GAME TIME MARKERS")
     
     -- Use pre-loaded time markers
     local markers = timeMarkers
@@ -264,7 +276,7 @@ local function SetGlobalTimes()
         if UpdateMarkerName(frame, markers[frame], timeLabels[i]) then
             print("Frame: " .. frame .. ", Updated time marker name to: " .. timeLabels[i])
         else
-            print("Frame: " .. frame .. ", Failed to update time marker name")
+            print("[ERROR] Frame: " .. frame .. ", Failed to update time marker name")
         end
     end
     
@@ -334,9 +346,6 @@ local function SetGlobalTimes()
     -- Set "FULL" at fourth marker
     gameTimeNode:SetInput("StyledText", "FULL", fullTimeFrame)
     print("Frame " .. fullTimeFrame .. ": Set time to FULL")
-    
-    print("Time display keyframes created successfully!")
-    
     return #frameNumbers
 end
 
@@ -351,14 +360,10 @@ if Initialize() then
     comp:EndUndo(true)
 
     -- Show summary
-    print("\n================ SUMMARY ================")
+    print("[SECTION] EXECUTION SUMMARY")
     print("Left team final score: " .. leftFinalScore)
     print("Right team final score: " .. rightFinalScore)  
-    print("Time markers found: " .. timeMarkersFound)
-    print("================ SUMMARY ================")
 else
-    print("\n================ ERROR ================")
-    print("Failed to initialize required components")
+    print("[ERROR] Failed to initialize required components")
     print("Check the error messages above for details")
-    print("================ ERROR ================")
 end
