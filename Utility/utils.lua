@@ -27,6 +27,20 @@ function utils.dump(o)
 end
 
 --[[
+  Returns the length of a table
+  
+  @param t table - The table to measure
+  @return number - The number of key-value pairs in the table
+]]
+function tableLength(t)
+    local count = 0
+    for _ in pairs(t) do
+      count = count + 1
+    end
+    return count
+  end
+
+--[[
   Gets all markers of a specific color from the timeline
   
   @param tl object - The timeline object
