@@ -102,6 +102,98 @@ function utils.formatTimeDisplay(seconds, format, customFormatFn)
     end
 end
 
+--[[
+  Inspects an object and prints its methods, properties, and common function calls
+  
+  @param obj - The object to inspect
+  @param label string - A label to use when printing information about the object
+]]
+function utils.inspectObject(obj, label)
+    label = label or "OBJECT"
+    print("\n--- INSPECTING " .. label .. " ---")
+    
+    if obj == nil then
+        print("Object is nil")
+        print("------------------------\n")
+        return
+    end
+    
+    -- Print the object type
+    print("Type: " .. type(obj))
+    
+    -- Try to get methods and properties through the metatable
+    local mt = getmetatable(obj)
+    if mt and mt.__index then
+        if type(mt.__index) == "table" then
+            print("\nMethods/Properties from metatable:")
+            for k, v in pairs(mt.__index) do
+                print(string.format("  %s (%s)", k, type(v)))
+            end
+        end
+    end
+    
+    -- Try direct inspection - BUT SAFELY CHECK OBJECT TYPE FIRST
+    print("\nDirect properties:")
+    if type(obj) == "table" then  -- Only use pairs() on actual tables
+        print(dump(obj))
+    else
+        print("  Cannot iterate: object is " .. type(obj) .. ", not a table")
+    end
+    
+    -- Try common methods used in Fusion
+    local commonMethods = {
+        -- Basic Tool Methods
+        "GetAttrs", "SetAttrs", "GetInput", "SetInput", 
+        "ConnectInput", "DisconnectInput", "GetInputList", 
+        "GetOutput", "GetOutputList", "FindMainInput",
+        
+        -- Animation and Keyframe Methods
+        "GetKeyFrames", "AddKey", "AddPoint", "DeleteKey", 
+        "DeleteKeyFrame", "DeleteKeyFrames", "GetKeyFrameTime", 
+        "SetKeyFrameValue", "GetKeyFrameValue", "BezierSpline",
+        
+        -- Hierarchy and Navigation
+        "GetParent", "GetChild", "GetChildren", "GetChildrenList",
+        "GetNextNode", "GetPrevNode", "GetToolList",
+        
+        -- Flow Methods
+        "GetFlow", "GetFlowView", "SetPos", "GetPos", "SetScale", "GetScale",
+        
+        -- Text-specific Methods (for Text+ tools)
+        "StyledText", "Font", "Style", "Size", "VerticalJustification",
+        
+        -- State and Identification
+        "GetName", "SetName", "GetID", "GetToolID", "IsSelected",
+        "IsPlaying", "IsRendering", "IsTime", "IsLocked",
+        
+        -- Time-related Methods
+        "GetTime", "SetTime", "GetCurrentTime", "SetCurrentTime",
+        "TimeToFrame", "FrameToTime", "GetFrameRate",
+        
+        -- Spline-specific Methods
+        "GetSpline", "SetSpline", "GetSplineValue", "SetSplineValue",
+        
+        -- Composition Methods
+        "GetComp", "GetFusion", "StartUndo", "EndUndo",
+        "Play", "Stop", "Pause", "Render",
+        
+        -- Event Methods
+        "AddNotify", "RemoveNotify", "AddObserver", "RemoveObserver"
+    }
+    
+    print("\nTesting common methods:")
+    for _, method in ipairs(commonMethods) do
+        local success, result = pcall(function() 
+            return obj[method] ~= nil 
+        end)
+        if(success and result) then
+            print(string.format("  %s", method))
+        end
+    end
+    
+    print("------------------------\n")
+end
+
 -- Configuration
 utils.CONFIG = {
     -- Color settings for markers (direct color names)

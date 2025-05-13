@@ -20,6 +20,12 @@ This toolset helps video editors automate the scoring workflow for sports videos
 - **Whiteout Markers**: Creates a clean timeline by converting colored markers to white
 - **Restore Marker Colors**: Reverts whiteout markers back to their original colors
 
+## Project Structure
+
+The scripts are organized into folders:
+- **comp/**: Contains all the main script files that can be run from the DaVinci Resolve Fusion Scripts menu
+- **Utility/**: Contains utility modules that provide shared functionality to the main scripts
+
 ## Requirements
 
 - DaVinci Resolve 18 or newer
@@ -27,9 +33,12 @@ This toolset helps video editors automate the scoring workflow for sports videos
 
 ## Installation
 
-Run the included PowerShell script `install_scripts.ps1` to automatically install:
-- All Lua scripts to `%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Comp`
+Run the included PowerShell script `install.ps1` to automatically install:
+- The entire `comp` folder to `%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Comp`
+- The entire `Utility` folder to `%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts`
 - MLS-Scoreboard setting to `%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Macros`
+
+This folder structure preserves the relationships between the scripts and ensures all path references work correctly.
 
 ## Usage
 
@@ -69,10 +78,16 @@ Game time automatically:
 - Shows "FULL" at the full time marker
 
 ### Customizable Display Options
-Edit the `utils.lua` file to customize:
+Edit the `Utility/utils.lua` file to customize:
 - Marker colors
 - Display formats
 - Time formatting options (MM:SS, M:SS, etc.)
+
+### Advanced Debugging
+The `Utility/utils.lua` includes an `inspectObject()` helper function for debugging Fusion objects, showing:
+- Available methods
+- Properties and their types
+- Common Fusion API methods that can be called
 
 ## License
 

@@ -26,7 +26,7 @@ All operations are wrapped in an undo group for easy reversal if needed.
 --]]
 
 -- Import utility functions
-local utils = dofile(app:MapPath("Scripts:\\Comp\\utils\\utils.lua"))
+local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 local CONFIG = utils.CONFIG
 
 --[[
