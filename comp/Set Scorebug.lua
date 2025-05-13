@@ -29,8 +29,9 @@ All operations are wrapped in an undo group for easy reversal if needed.
 --]]
 
 -- Import utility functions
-local utils = dofile(app:MapPath("Scripts:\\Comp\\utils\\utils.lua"))
-local dump = utils.dump
+local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
+local udump = utils.dump
+local inspectObject = utils.inspectObject
 local GetMarkersByColor = utils.GetMarkersByColor
 local formatTimeDisplay = utils.formatTimeDisplay
 local CONFIG = utils.CONFIG
@@ -68,12 +69,12 @@ end
   
   @return fusion_composition or nil if not found
 ]]
-local function findScorebug()     
+local function findScorebugComp()     
     for i = 1, tl:GetTrackCount("video"), 1 do
         local tli = tl:GetItemListInTrack("video", i)
         for x = 1, #tli, 1 do
             if(tli[x]:GetName() == CONFIG.COMPOSITION_NAME) then
-                return tli[x]
+                return tli[x]:GetFusionCompByIndex(1)
             end
         end
     end
@@ -82,36 +83,10 @@ local function findScorebug()
     return nil
 end
 
---[[
-  Sets the score for either left or right team at a specific frame
-  
-  @param side string - Either "LEFT" or "RIGHT"
-  @param score number - The score value to set
-  @param frame number - The frame number to set the score at
-  @return boolean - True if successful, false otherwise
-]]
-local function SetScore(side, score, frame)
-    local elementName = (side:upper() == "LEFT") and CONFIG.LEFT_SCORE_ELEMENT or CONFIG.RIGHT_SCORE_ELEMENT
-    
-    local sb = findScorebug()
-    if not sb then return false end
-    
-    local scomp = sb:GetFusionCompByIndex(1)
-    local tool = scomp:FindTool(CONFIG.SCOREBUG_TOOL)
-    if not tool then
-        print("Error: Could not find tool '" .. CONFIG.SCOREBUG_TOOL .. "'")
-        return false
-    end
-    
-    for i, t in pairs(tool:GetChildrenList()) do
-        if(t.Name == elementName) then
-            t:SetInput("StyledText", score, frame)
-            return true
-        end
-    end
-    
-    print("Warning: Could not find element '" .. elementName .. "'")
-    return false
+local sbcomp = findScorebugComp()
+if not sbcomp then
+    print("Error: Could not find scorebug composition")
+    return
 end
 
 --[[
@@ -124,29 +99,18 @@ local function GetTeamName(side)
     local elementName = (side:upper() == "LEFT") and CONFIG.LEFT_NAME_ELEMENT or CONFIG.RIGHT_NAME_ELEMENT
     local defaultName = (side:upper() == "LEFT") and "Home" or "Away"
     
-    local sb = findScorebug()
-    if not sb then return defaultName end
-    
-    local scomp = sb:GetFusionCompByIndex(1)
-    local tool = scomp:FindTool(CONFIG.SCOREBUG_TOOL)
+    local tool = sbcomp:FindTool(elementName)
     if not tool then
-        print("Error: Could not find tool '" .. CONFIG.SCOREBUG_TOOL .. "'")
-        return defaultName
+        print("Error: Could not find tool '" .. elementName .. "'")
+        return false
     end
-    
-    for i, t in pairs(tool:GetChildrenList()) do
-        if(t.Name == elementName) then
-            local teamName = t:GetInput("StyledText")
-            -- If it's nil or empty, return the default
-            if not teamName or teamName == "" then return defaultName end
-            -- If it's an expression, return default
-            if type(teamName) == "string" and teamName:match("^=<.*>$") then return defaultName end
-            return tostring(teamName)
-        end
-    end
-    
-    print("Warning: Could not find element '" .. elementName .. "'")
-    return defaultName
+
+    local teamName = tool:GetInput("StyledText")
+    -- If it's nil or empty, return the default
+    if not teamName or teamName == "" then return defaultName end
+    -- If it's an expression, return default
+    if type(teamName) == "string" and teamName:match("^=<.*>$") then return defaultName end
+    return tostring(teamName)
 end
 
 --[[
@@ -196,11 +160,22 @@ local function ProcessScores(side, color)
     local teamName = GetTeamName(side)
     print("Team name from scorebug: " .. teamName)
     
+    local elementName = (side:upper() == "LEFT") and CONFIG.LEFT_SCORE_ELEMENT or CONFIG.RIGHT_SCORE_ELEMENT
+    
+    local tool = sbcomp:FindTool(elementName)
+    if not tool then
+        print("Error: Could not find tool '" .. elementName .. "'")
+        return false
+    end
+
+    -- Clear existing keyframes
+    tool.StyledText = nil
+    tool.StyledText = sbcomp:BezierSpline({})
+
     -- Process each marker in order
     for _, frame in ipairs(frameNumbers) do 
         score = score + 1
-        
-        local success = SetScore(side:upper(), score, frame)
+        tool:SetInput("StyledText", score, frame)
         if success then
             -- Format the marker name with team name and score
             local newMarkerName = teamName .. " " .. score
@@ -252,91 +227,83 @@ local function SetGlobalTimes()
     end
     
     -- Set keyframes for the GAME_TIME_2 Text+ tool
-    local sb = findScorebug()
-    if sb then
-        local scomp = sb:GetFusionCompByIndex(1)
-        local tool = scomp:FindTool(CONFIG.SCOREBUG_TOOL)
-        if tool then
-            -- Find the GAME_TIME_2 text node
-            local gameTimeNode = nil
-            for i, t in pairs(tool:GetChildrenList()) do
-                if t.Name == "GAME_TIME_2" then
-                    gameTimeNode = t
-                    break
-                end
+    -- Find the GAME_TIME_2 text node
+    local gameTimeNode = sbcomp:FindTool("GAME_TIME_2")
+    if gameTimeNode then
+        print("Setting up time display keyframes...")
+
+        -- Clear existing keyframes
+        gameTimeNode.StyledText = nil;
+        gameTimeNode.StyledText = sbcomp:BezierSpline({})
+
+        -- Set initial time to "00:00"
+        gameTimeNode:SetInput("StyledText", "00:00", 0)
+        
+        -- Check if we have at least the required 4 time markers
+        if #TIMES >= 4 then
+            -- First half: 00:00 to HALF
+            local firstHalfStart = TIMES[1]
+            local halfTimeFrame = TIMES[2]
+            
+            -- Second half: Continue from previous time to FULL
+            local secondHalfStart = TIMES[3]
+            local fullTimeFrame = TIMES[4]
+            
+            -- Set "00:00" at first marker
+            gameTimeNode:SetInput("StyledText", "00:00", firstHalfStart)
+            print("Frame " .. firstHalfStart .. ": Set time to 00:00")
+            
+            -- Add keyframes for each second between first marker and halftime
+            local framesPerSecond = math.floor(fps)
+            local totalSeconds = math.floor((halfTimeFrame - firstHalfStart) / framesPerSecond)
+            
+            for i = 1, totalSeconds do
+                local currentFrame = firstHalfStart + (i * framesPerSecond)
+                
+                -- Stop if we've gone past halftime
+                if currentFrame >= halfTimeFrame then break end
+                
+                -- Format time using the utility function
+                local timeDisplay = formatTimeDisplay(i)
+                
+                gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
             end
             
-            if gameTimeNode then
-                print("Setting up time display keyframes...")
-                gameTimeNode:SetInput("StyledText", "00:00", 0)
-                
-                -- Check if we have at least the required 4 time markers
-                if #TIMES >= 4 then
-                    -- First half: 00:00 to HALF
-                    local firstHalfStart = TIMES[1]
-                    local halfTimeFrame = TIMES[2]
-                    
-                    -- Second half: Continue from previous time to FULL
-                    local secondHalfStart = TIMES[3]
-                    local fullTimeFrame = TIMES[4]
-                    
-                    -- Set "00:00" at first marker
-                    gameTimeNode:SetInput("StyledText", "00:00", firstHalfStart)
-                    print("Frame " .. firstHalfStart .. ": Set time to 00:00")
-                    
-                    -- Add keyframes for each second between first marker and halftime
-                    local framesPerSecond = math.floor(fps)
-                    local totalSeconds = math.floor((halfTimeFrame - firstHalfStart) / framesPerSecond)
-                    
-                    for i = 1, totalSeconds do
-                        local currentFrame = firstHalfStart + (i * framesPerSecond)
-                        
-                        -- Stop if we've gone past halftime
-                        if currentFrame >= halfTimeFrame then break end
-                        
-                        -- Format time using the utility function
-                        local timeDisplay = formatTimeDisplay(i)
-                        
-                        gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
-                    end
-                    
-                    -- Set "HALF" at second marker
-                    gameTimeNode:SetInput("StyledText", "HALF", halfTimeFrame)
-                    print("Frame " .. halfTimeFrame .. ": Set time to HALF")
+            -- Set "HALF" at second marker
+            gameTimeNode:SetInput("StyledText", "HALF", halfTimeFrame)
+            print("Frame " .. halfTimeFrame .. ": Set time to HALF")
 
-                    -- Set time to last value at second half start
-                    local timeDisplay = formatTimeDisplay(totalSeconds)
-                    gameTimeNode:SetInput("StyledText", timeDisplay, secondHalfStart)
-                    print("Frame " .. secondHalfStart .. ": Set time to " .. timeDisplay)
-                    
-                    -- Continue time from where we left off for second half
-                    local lastTimeSeconds = totalSeconds
-                    totalSeconds = math.floor((fullTimeFrame - secondHalfStart) / framesPerSecond)
-                    
-                    for i = 1, totalSeconds do
-                        local currentFrame = secondHalfStart + (i * framesPerSecond)
-                        
-                        -- Stop if we've gone past fulltime
-                        if currentFrame >= fullTimeFrame then break end
-                        
-                        -- Continue from previous time value using utility function
-                        local timeDisplay = formatTimeDisplay(lastTimeSeconds + i)
-                        
-                        gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
-                    end
-                    
-                    -- Set "FULL" at fourth marker
-                    gameTimeNode:SetInput("StyledText", "FULL", fullTimeFrame)
-                    print("Frame " .. fullTimeFrame .. ": Set time to FULL")
-                    
-                    print("Time display keyframes created successfully!")
-                else
-                    print("Error: Need at least 4 time markers to set up game time display properly")
-                end
-            else
-                print("Warning: Could not find element 'GAME_TIME_2'")
+            -- Set time to last value at second half start
+            local timeDisplay = formatTimeDisplay(totalSeconds)
+            gameTimeNode:SetInput("StyledText", timeDisplay, secondHalfStart)
+            print("Frame " .. secondHalfStart .. ": Set time to " .. timeDisplay)
+            
+            -- Continue time from where we left off for second half
+            local lastTimeSeconds = totalSeconds
+            totalSeconds = math.floor((fullTimeFrame - secondHalfStart) / framesPerSecond)
+            
+            for i = 1, totalSeconds do
+                local currentFrame = secondHalfStart + (i * framesPerSecond)
+                
+                -- Stop if we've gone past fulltime
+                if currentFrame >= fullTimeFrame then break end
+                
+                -- Continue from previous time value using utility function
+                local timeDisplay = formatTimeDisplay(lastTimeSeconds + i)
+                
+                gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
             end
+            
+            -- Set "FULL" at fourth marker
+            gameTimeNode:SetInput("StyledText", "FULL", fullTimeFrame)
+            print("Frame " .. fullTimeFrame .. ": Set time to FULL")
+            
+            print("Time display keyframes created successfully!")
+        else
+            print("Error: Need at least 4 time markers to set up game time display properly")
         end
+    else
+        print("Warning: Could not find element 'GAME_TIME_2'")
     end
     
     return #frameNumbers

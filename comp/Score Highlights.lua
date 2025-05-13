@@ -3,7 +3,7 @@
 Script Name: Adjust Score Markers.lua
 Author: Tyler
 Created: May 11, 2025
-Last Modified: May 11, 2025
+Last Modified: May 12, 2025
 
 Description:
 This script automatically adjusts sport score markers in DaVinci Resolve to create
@@ -33,10 +33,38 @@ All operations are wrapped in undo groups for easy reversal if needed.
 --]]
 
 -- Import utility functions
-local utils = dofile(app:MapPath("Scripts:\\Comp\\utils\\utils.lua"))
+local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 local dump = utils.dump
 local GetMarkersByColor = utils.GetMarkersByColor
 local CONFIG = utils.CONFIG
+
+-- Initialize core Resolve objects
+local pm = resolve:GetProjectManager()
+if not pm then
+    print("Error: Failed to get Project Manager")
+    return
+end
+
+local pr = pm:GetCurrentProject()
+if not pr then
+    print("Error: No project is currently open")
+    return
+end
+
+local tl = pr:GetCurrentTimeline()
+if not tl then
+    print("Error: No timeline is currently active")
+    return
+end
+
+-- Get the project frame rate
+local fps = pr:GetSetting("timelineFrameRate")
+if not fps or fps == 0 then 
+    fps = 24  -- Default to 24fps if unable to get setting
+    print("Warning: Unable to determine project frame rate, using default of 24fps")
+else
+    print("Project frame rate: " .. fps .. " fps")
+end
 
 --[[
   Adjusts a marker's start time to 15 seconds prior and sets its duration to 15 seconds
@@ -68,17 +96,12 @@ end
 local function AdjustColoredMarkers(color)
     print("Adjusting " .. color .. " markers...")
     
-    -- Get the project frame rate
-    local pm = resolve:GetProjectManager()
-    local pr = pm:GetCurrentProject()
-    local fps = pr:GetSetting("timelineFrameRate")
-    
-    local tl = pr:GetCurrentTimeline()
-    
-    local markers = GetMarkersByColor(color)
+    local markers, frameNumbers = GetMarkersByColor(tl, color)
     local adjusted = 0
     
-    for frame, marker in pairs(markers) do
+    -- Process markers in frame order
+    for _, frame in ipairs(frameNumbers) do
+        local marker = markers[frame]
         local newTiming = AdjustMarkerTiming(frame, fps)
         
         -- Delete the original marker
