@@ -66,7 +66,7 @@ local function WhiteOutMarkers()
             converted[originalColor] = (converted[originalColor] or 0) + 1
             
             -- Add color info to the note
-            local newNote = "[Original color: " .. originalColor .. "]"
+            local newNote = "[Original color: " .. originalColor .. "]" .. (marker.note or "")
             
             -- Delete the original marker
             tl:DeleteMarkerAtFrame(frame)
