@@ -41,27 +41,27 @@ local CONFIG = utils.CONFIG
 -- Initialize core Resolve objects
 local pm = resolve:GetProjectManager()
 if not pm then
-    print("Error: Failed to get Project Manager")
+    print("[ERROR] Failed to get Project Manager")
     return
 end
 
 local pr = pm:GetCurrentProject()
 if not pr then
-    print("Error: No project is currently open")
+    print("[ERROR] No project is currently open")
     return
 end
 
 local tl = pr:GetCurrentTimeline()
 if not tl then
-    print("Error: No timeline is currently active")
+    print("[ERROR] No timeline is currently active")
     return
 end
 
 -- Get the project frame rate
 local fps = pr:GetSetting("timelineFrameRate")
 if not fps or fps == 0 then 
-    fps = 24  -- Default to 24fps if unable to get setting
-    print("Warning: Unable to determine project frame rate, using default of 24fps")
+    print("[ERROR] Unable to determine project frame rate, using default of 24fps")
+    return
 else
     print("Project frame rate: " .. fps .. " fps")
 end
@@ -75,11 +75,14 @@ end
   @return table - Contains the new start frame and duration in frames
 ]]
 local function AdjustMarkerTiming(markerFrame, fps)
-    local framesPerSecond = fps or 24 -- Default to 24fps if not specified
-    local offsetFrames = 15 * framesPerSecond
+    -- Set the duration to 15 seconds in frames
+    local durationFrames = math.floor(15 * fps)
     
-    local newStartFrame = markerFrame - offsetFrames
-    local durationFrames = offsetFrames
+    -- Calculate the new start frame by subtracting 15 seconds in frames
+    local newStartFrame = math.floor(markerFrame - durationFrames)
+    if(newStartFrame < 0) then
+        newStartFrame = 0 -- Ensure we don't go below frame 0
+    end
     
     return {
         startFrame = newStartFrame,

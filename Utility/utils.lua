@@ -32,7 +32,7 @@ end
   @param t table - The table to measure
   @return number - The number of key-value pairs in the table
 ]]
-function tableLength(t)
+function utils.tableLength(t)
     local count = 0
     for _ in pairs(t) do
       count = count + 1
@@ -56,14 +56,12 @@ function utils.GetMarkersByColor(tl, color)
     local ml = tl:GetMarkers()
     local markers = {}
     local frameNumbers = {}
-    local i = 1
     
     -- Collect markers of specified color
     for t, m in pairs(ml) do
         if(m.color == color) then
             markers[t] = m
             table.insert(frameNumbers, t)
-            i = i + 1
         end
     end
     

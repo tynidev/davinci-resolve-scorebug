@@ -92,9 +92,9 @@ local function Initialize()
 
     -- Calculate project frame rate (used for time calculations)
     fps = pr:GetSetting("timelineFrameRate")
-    if not fps or fps == 0 then 
-        fps = 24  -- Default to 24fps if unable to get setting
-        print("[WARNING] Unable to determine project frame rate, using default of 24fps")
+    if not fps or fps == 0 then
+        print("[ERROR] Unable to determine project frame rate, using default of 24fps")
+        return false
     else
         print("Project frame rate: " .. fps .. " fps")
     end
@@ -171,7 +171,7 @@ local function GetTeamName(side)
         return defaultName
     end
 
-    local teamName = tool:GetInput("StyledText")
+    local teamName = tool.StyledText[0]
     -- If it's nil or empty, return the default
     if not teamName or teamName == "" then return defaultName end
     -- If it's an expression, return default
