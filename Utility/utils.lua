@@ -297,6 +297,103 @@ function utils.inspectObject(obj, label)
     print("------------------------\n")
 end
 
+--[[
+  Initializes and returns core DaVinci Resolve objects.
+
+  @return table|nil - A table containing pm, pr, tl, and fps if successful, nil otherwise.
+                     { pm: ProjectManager, pr: Project, tl: Timeline, fps: number }
+]]
+function utils.initializeCoreResolveObjects()
+    local resolveObjs = {}
+    resolveObjs.pm = resolve:GetProjectManager()
+    if not resolveObjs.pm then
+        print("[ERROR] utils.initializeCoreResolveObjects: Failed to get Project Manager")
+        return nil
+    end
+
+    resolveObjs.pr = resolveObjs.pm:GetCurrentProject()
+    if not resolveObjs.pr then
+        print("[ERROR] utils.initializeCoreResolveObjects: No project is currently open")
+        return nil
+    end
+
+    resolveObjs.tl = resolveObjs.pr:GetCurrentTimeline()
+    if not resolveObjs.tl then
+        print("[ERROR] utils.initializeCoreResolveObjects: No timeline is currently active")
+        return nil
+    end
+
+    resolveObjs.fps = resolveObjs.pr:GetSetting("timelineFrameRate")
+    if not resolveObjs.fps or resolveObjs.fps == 0 then
+        print("[ERROR] utils.initializeCoreResolveObjects: Unable to determine project frame rate")
+        return nil
+    end
+    print("utils.initializeCoreResolveObjects: Project frame rate: " .. resolveObjs.fps .. " fps")
+    return resolveObjs
+end
+
+--[[
+  Ensures a Fusion composition is available, creating one if necessary.
+  Uses the global 'comp' if available, otherwise gets/creates a new one via 'resolve:Fusion()'.
+
+  @return table|nil - The Fusion composition object, or nil if an error occurs.
+]]
+function utils.ensureFusionComposition()
+    local currentComp = comp -- comp is a global variable in Resolve's scripting environment
+    if not currentComp then
+        local fusion = resolve:Fusion()
+        if not fusion then
+            print("[ERROR] utils.ensureFusionComposition: Failed to get Fusion object from resolve.")
+            return nil
+        end
+        currentComp = fusion:GetCurrentComp()
+        if not currentComp then
+            print("utils.ensureFusionComposition: No current Fusion comp. Creating a new one.")
+            currentComp = fusion:NewComp()
+            if not currentComp then
+                print("[ERROR] utils.ensureFusionComposition: Could not create a new Fusion composition.")
+                return nil
+            end
+        end
+    end
+    return currentComp
+end
+
+--[[
+  Finds a Fusion composition item on the timeline by its name.
+
+  @param timeline table - The timeline object to search within.
+  @param compName string - The name of the Fusion composition item to find.
+  @return table|nil - The Fusion composition object if found, otherwise nil.
+]]
+function utils.findNamedFusionCompOnTimeline(timeline, compName)
+    if not timeline then
+        print("[ERROR] utils.findNamedFusionCompOnTimeline: Invalid timeline object provided.")
+        return nil
+    end
+    if not compName then
+        print("[ERROR] utils.findNamedFusionCompOnTimeline: Invalid compName string provided.")
+        return nil
+    end
+
+    for i = 1, timeline:GetTrackCount("video") do
+        local timelineItems = timeline:GetItemListInTrack("video", i)
+        if timelineItems then
+            for _, item in ipairs(timelineItems) do
+                if item:GetName() == compName then
+                    local fusionComp = item:GetFusionCompByIndex(1) -- Assuming the first Fusion comp if multiple exist on the item
+                    if fusionComp then
+                        print("utils.findNamedFusionCompOnTimeline: Found Fusion composition '" .. compName .. "' on video track " .. i)
+                        return fusionComp
+                    end
+                end
+            end
+        end
+    end
+    print("[WARNING] utils.findNamedFusionCompOnTimeline: Could not find Fusion composition item named '" .. compName .. "' on the timeline.")
+    return nil
+end
+
 -- Configuration
 utils.CONFIG = {
     -- Color settings for markers (direct color names)

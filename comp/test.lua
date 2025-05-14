@@ -2,28 +2,20 @@
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 local udump = utils.dump
 local inspectObject = utils.inspectObject
-local GetMarkersByColor = utils.GetMarkersByColor
+-- local GetMarkersByColor = utils.GetMarkersByColor -- This was not used, and GetTimelineMarkers is preferred
 local formatTimeDisplay = utils.formatTimeDisplay
 local GetTimelineMarkers = utils.GetTimelineMarkers -- Import GetTimelineMarkers
 local CONFIG = utils.CONFIG
 
-pm = resolve:GetProjectManager()
-if not pm then
-    print("[ERROR] Failed to get Project Manager")
-    return false
+-- Initialize Resolve objects using the new utility function
+local resolveObjs = utils.initializeCoreResolveObjects()
+if not resolveObjs then
+    return false -- Exit if initialization failed
 end
-
-pr = pm:GetCurrentProject()
-if not pr then
-    print("[ERROR] No project is currently open")
-    return false
-end
-
-tl = pr:GetCurrentTimeline()
-if not tl then
-    print("[ERROR] No timeline is currently active")
-    return false
-end
+local pm = resolveObjs.pm
+local pr = resolveObjs.pr
+local tl = resolveObjs.tl
+-- local fps = resolveObjs.fps -- fps is not used in this script
 
 print("--- All Markers ---")
 dump(GetTimelineMarkers(tl, {}))
