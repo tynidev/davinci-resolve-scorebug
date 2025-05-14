@@ -1,22 +1,36 @@
 --[[
 ================================================================================
 Script Name: All Score Processing.lua
-Author: GitHub Copilot (based on Tyler's scripts)
+Author: Tyler
 Created: May 11, 2025
+Last Modified: May 14, 2025
 
 Description:
-This script automates the complete workflow for processing sports scores by calling
-three scripts in sequence:
-1. Set Scorebug - Updates the scorebug with team scores based on colored markers
-2. Score Highlights - Adjusts markers to create highlight regions around scoring events
-3. Whiteout Markers - Converts all colored markers to white for a clean timeline look
+This master script orchestrates the complete sports scorebug workflow by running
+three specialized scripts in sequence, handling all aspects of score tracking,
+highlight generation, and timeline organization.
+
+The workflow consists of three sequential operations:
+1. Set Scorebug.lua - Processes all score events and updates the scorebug with:
+   - Team names and score tallies
+   - Game time indicators (halftime, fulltime, etc.)
+   - Keyframed animations for score changes and game time elapsed
+
+2. Score Highlights.lua - Converts score markers into highlight regions:
+   - Shifts markers back in time to create lead-up regions
+   - Sets appropriate durations for highlight selection
+
+3. Whiteout Markers.lua - Creates a clean timeline appearance:
+   - Converts all colored markers to a uniform cream color 
+   - Preserves original color data in marker notes
+   - Maintains the ability to restore colors if needed with Restore Marker Colors.lua
 
 Usage:
-1. Ensure all prerequisite scripts are in the correct locations
+1. Place appropriate colored markers for scores and time periods
 2. Run this script from the Fusion Scripts menu
-3. All three processes will execute in sequence
+3. All three processes execute in sequence with progress reports
+4. If any script fails, an error is reported but the sequence continues
 
-All operations are wrapped in an undo group for easy reversal if needed.
 ================================================================================
 --]]
 
