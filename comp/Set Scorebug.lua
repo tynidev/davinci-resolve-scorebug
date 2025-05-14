@@ -32,13 +32,11 @@ All operations are wrapped in an undo group for easy reversal if needed.
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 
 -- Global variables declaration
-local pm, pr, tl, fps
-local sbcomp -- This will be the Fusion comp found on the timeline
-local leftScoreNode, rightScoreNode, gameTimeNode
-local leftNameNode, rightNameNode -- Added variables for team name tools
-local timeMarkers
-local leftScoreMarkers
-local rightScoreMarkers
+local resolveObjs                                       -- Initialized Resolve objects
+local sbcomp                                            -- The scorebug Fusion composition
+local leftScoreNode, rightScoreNode, gameTimeNode       -- Score nodes for left and right teams and game time
+local leftNameNode, rightNameNode                       -- Team name nodes
+local timeMarkers, leftScoreMarkers, rightScoreMarkers  -- Timeline markers for game time and team scores
 
 --[[
   Initializes all required objects and variables
@@ -48,17 +46,13 @@ local rightScoreMarkers
 local function Initialize()
     print("[SECTION] INITIALIZATION")
     -- Initialize core Resolve objects using the utility function
-    local resolveObjs = utils.initializeCoreResolveObjects()
+    resolveObjs = utils.initializeCoreResolveObjects()
     if not resolveObjs then
         return false -- Exit if initialization failed
     end
-    pm = resolveObjs.pm
-    pr = resolveObjs.pr
-    tl = resolveObjs.tl
-    fps = resolveObjs.fps
     
     -- Find and store scorebug composition using the utility function
-    sbcomp = utils.findNamedFusionCompOnTimeline(tl, utils.CONFIG.COMPOSITION_NAME)
+    sbcomp = utils.findNamedFusionCompOnTimeline(resolveObjs.tl, utils.CONFIG.COMPOSITION_NAME)
     if not sbcomp then
         print("[ERROR] Could not find scorebug composition named '" .. utils.CONFIG.COMPOSITION_NAME .. "' using utility function.")
         return false
@@ -96,7 +90,7 @@ local function Initialize()
     
     -- Get markers by color
     print("Loading time markers...")
-    timeMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.TIME_MARKERS })
+    timeMarkers = utils.GetTimelineMarkers(resolveObjs.tl, { color = utils.CONFIG.GAME_MARKERS.TIME_MARKERS })
     if #timeMarkers < 4 then
         print("[ERROR] Found only " .. #timeMarkers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
         return false
@@ -104,11 +98,11 @@ local function Initialize()
     print("Found " .. #timeMarkers .. " time markers")
     
     print("Loading left team score markers...")
-    leftScoreMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.LEFT_TEAM })
+    leftScoreMarkers = utils.GetTimelineMarkers(resolveObjs.tl, { color = utils.CONFIG.GAME_MARKERS.LEFT_TEAM })
     print("Found " .. #leftScoreMarkers .. " left team score markers")
     
     print("Loading right team score markers...")
-    rightScoreMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.RIGHT_TEAM })
+    rightScoreMarkers = utils.GetTimelineMarkers(resolveObjs.tl, { color = utils.CONFIG.GAME_MARKERS.RIGHT_TEAM })
     print("Found " .. #rightScoreMarkers .. " right team score markers")
     
     return true
@@ -175,7 +169,7 @@ local function ProcessScores(side, color)
         local newMarkerName = teamName .. " " .. score
         
         -- Update the marker name in the timeline
-        if utils.UpdateTimelineMarker(tl,  marker, {name = newMarkerName}) then 
+        if utils.UpdateTimelineMarker(resolveObjs.tl,  marker, {name = newMarkerName}) then 
             print("Frame: " .. frame .. ", Score: " .. score .. ", Updated name: " .. newMarkerName)
         else
             print("[ERROR] Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
@@ -189,7 +183,7 @@ end
   Sets global time markers (cream) and adds keyframes for the game time display
   @return number - The number of time markers found
 ]]
-local function SetGlobalTimes()
+local function ProcessGamePeriods()
     print("[SECTION] GAME TIME MARKERS")
     
     -- Use pre-loaded time markers
@@ -204,7 +198,7 @@ local function SetGlobalTimes()
         local marker = markers[i]
 
         -- Update the marker name with standard label
-        if utils.UpdateTimelineMarker(tl, marker, {name = timeLabels[i]}) then 
+        if utils.UpdateTimelineMarker(resolveObjs.tl, marker, {name = timeLabels[i]}) then 
             print("Frame " .. frame .. ": Updated time marker name to: " .. timeLabels[i])
         else
             print("[ERROR] Frame " .. frame .. ": Failed to update time marker name")
@@ -234,7 +228,7 @@ local function SetGlobalTimes()
     print("Frame " .. firstHalfStart .. ": Set time to 00:00")
     
     -- Add keyframes for each second between first marker and halftime
-    local framesPerSecond = math.floor(fps)
+    local framesPerSecond = math.floor(resolveObjs.fps)
     local totalSeconds = math.floor((halfTimeFrame - firstHalfStart) / framesPerSecond)
     
     for i = 1, totalSeconds do
@@ -287,7 +281,7 @@ local function Main()
     if Initialize() then
         -- if we have everything we need, start making changes
         sbcomp:StartUndo('Set Scores')
-        SetGlobalTimes()
+        ProcessGamePeriods()
         local leftFinalScore = ProcessScores("LEFT", utils.CONFIG.GAME_MARKERS.LEFT_TEAM)
         local rightFinalScore = ProcessScores("RIGHT", utils.CONFIG.GAME_MARKERS.RIGHT_TEAM)
         sbcomp:EndUndo(true)

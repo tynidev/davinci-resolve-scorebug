@@ -58,7 +58,7 @@ local function RestoreMarkerColors(resolveObjs)
         print("[ERROR] RestoreMarkerColors: Invalid or missing resolveObjs parameter")
         return {}
     end
-    
+
     -- Get all CREAM colored markers
     local creamMarkers = utils.GetTimelineMarkers(resolveObjs.tl, {color = utils.CONFIG.COLORS.CREAM})
     
@@ -126,8 +126,15 @@ local function PrintSummary(restored)
     end
 end
 
--- Wrap execution in a Main function that returns success/failure status
+-- Main execution
 local function Main()
+    -- Access core Resolve objects for RestoreMarkerColors function
+    local resolveObjs = utils.initializeCoreResolveObjects()
+    if not resolveObjs then
+        print("[ERROR] Restore Marker Colors: Failed to initialize Resolve objects.")
+        return false
+    end
+
     -- Get/Ensure Fusion Composition
     local composition = utils.ensureFusionComposition()
     if not composition then
@@ -135,25 +142,17 @@ local function Main()
         return false
     end
 
--- Main execution
--- Access core Resolve objects for RestoreMarkerColors function
-local resolveObjs = utils.initializeCoreResolveObjects()
-if not resolveObjs then
-    print("[ERROR] Restore Marker Colors: Failed to initialize Resolve objects.")
-    return false
-end
+    print("Restoring original marker colors...")
 
-print("Restoring original marker colors...")
-composition:StartUndo("Restore Marker Colors")
+    composition:StartUndo("Restore Marker Colors")
+    local restored = RestoreMarkerColors(resolveObjs)
+    composition:EndUndo(true)
 
-local restored = RestoreMarkerColors(resolveObjs) -- Now passing resolveObjs as parameter
-PrintSummary(restored)
+    PrintSummary(restored)
 
-composition:EndUndo(true)
-
-if next(restored) then
-    print("Done! All markers have been restored to their original colors.")
-end
+    if next(restored) then
+        print("Done! All markers have been restored to their original colors.")
+    end
 
     return true
 end
