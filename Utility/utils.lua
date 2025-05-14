@@ -41,35 +41,126 @@ function utils.tableLength(t)
   end
 
 --[[
-  Gets all markers of a specific color from the timeline
-  
-  @param tl object - The timeline object
-  @param color string - The marker color to filter by
-  @return table - A table of markers with frame numbers as keys, sorted by frame
+  Updates properties of an existing marker on the timeline.
+  Deletes the old marker and creates a new one with updated values.
+
+  @param tl table - The timeline object.
+  @param existingMarker table - The marker object to update. Must contain a 'frame' field.
+  @param updates table - A table containing the marker properties to update.
+                         Example: { name = "New Name", note = "Updated note", color = "Green" }
+                         Valid keys: "name", "note", "color", "duration", "customData", "frameId" (to move the marker).
+  @return boolean - True if successful, false otherwise.
 ]]
-function utils.GetMarkersByColor(tl, color)
+function utils.UpdateTimelineMarker(tl, existingMarker, updates)
     if not tl then
-        print("Error: No timeline provided to GetMarkersByColor")
+        print("[ERROR] utils.UpdateTimelineMarker: Timeline object is nil.")
+        return false
+    end
+    if not existingMarker or type(existingMarker) ~= "table" or existingMarker.frame == nil then
+        print("[ERROR] utils.UpdateTimelineMarker: existingMarker is invalid or missing .frame field.")
+        return false
+    end
+    if not updates or type(updates) ~= "table" then
+        print("[ERROR] utils.UpdateTimelineMarker: Updates argument must be a table.")
+        return false
+    end
+
+    -- Prepare new marker data, starting with existing values from existingMarker
+    local newMarkerData = {
+        frame      = updates.frame or existingMarker.frame, -- Use the frame from updates if provided
+        color      = existingMarker.color,
+        name       = existingMarker.name,
+        note       = existingMarker.note,
+        duration   = existingMarker.duration,
+        customData = existingMarker.customData
+    }
+
+    -- Apply updates from the 'updates' table
+    if updates.name       ~= nil then newMarkerData.name = updates.name end
+    if updates.note       ~= nil then newMarkerData.note = updates.note end
+    if updates.color      ~= nil then newMarkerData.color = updates.color end
+    if updates.duration   ~= nil then newMarkerData.duration = updates.duration end
+    if updates.customData ~= nil then newMarkerData.customData = updates.customData end
+    
+    -- Delete the original marker.
+    if not tl:DeleteMarkerAtFrame(existingMarker.frame) then
+        print("[ERROR] utils.UpdateTimelineMarker: Failed to delete original marker at frame " .. existingMarker.frame .. ". It might have been already deleted or changed.")
+        return false
+    end
+    
+    -- Create a new marker with the updated properties
+    if not tl:AddMarker(
+        newMarkerData.frame,       -- frame for placement
+        newMarkerData.color,       -- color
+        newMarkerData.name,        -- name
+        newMarkerData.note,        -- note
+        newMarkerData.duration,    -- duration
+        newMarkerData.customData   -- customData (if any)
+    ) then
+        print("[ERROR] utils.UpdateTimelineMarker: Failed to add new/updated marker at frame " .. newMarkerData.frame)
+        -- Attempt to restore the original marker if addition fails and original was successfully fetched
+        -- This is complex as the original might have been deleted. For now, just error out.
+        tl:AddMarker(
+            existingMarker.frame,       -- frame for placement
+            existingMarker.color,       -- color
+            existingMarker.name,        -- name
+            existingMarker.note,        -- note
+            existingMarker.duration,    -- duration
+            existingMarker.customData   -- customData (if any)
+        )
+        return false
+    end
+    
+    return true
+end
+
+--[[
+  Gets all timeline markers, optionally filtered by specified properties,
+  and returns them as an array sorted by frame number.
+
+  @param tl table - The timeline object.
+  @param filters table (optional) - A table of key-value pairs to filter markers.
+                                    Example: {color = "Blue", name = "MyMarker"}
+                                    Only markers matching all filters will be returned.
+  @return table - An array of marker objects, sorted by frame number.
+                  Each marker object will have a 'frame' field added to it.
+]]
+function utils.GetTimelineMarkers(tl, filters)
+    if not tl then
+        print("[ERROR] utils.GetTimelineMarkers: Timeline object is nil.")
         return {}
     end
-    
-    local ml = tl:GetMarkers()
-    local markers = {}
-    local frameNumbers = {}
-    
-    -- Collect markers of specified color
-    for t, m in pairs(ml) do
-        if(m.color == color) then
-            markers[t] = m
-            table.insert(frameNumbers, t)
+
+    local allTimelineMarkers = tl:GetMarkers()
+    if not allTimelineMarkers or utils.tableLength(allTimelineMarkers) == 0 then
+        return {}
+    end
+
+    local filteredMarkersArray = {}
+
+    for frame, markerData in pairs(allTimelineMarkers) do
+        local match = true
+        if filters and type(filters) == "table" and utils.tableLength(filters) > 0 then
+            for key, expectedValue in pairs(filters) do
+                if markerData[key] ~= expectedValue then
+                    match = false
+                    break
+                end
+            end
+        end
+
+        if match then
+            markerData.frame = frame -- Add the frame number as a property to the marker object itself
+            table.insert(filteredMarkersArray, markerData)
         end
     end
-    
-    -- Sort the frame numbers
-    table.sort(frameNumbers)
-    
-    -- Return both the markers table and sorted frame numbers
-    return markers, frameNumbers
+
+    -- Sort the array of marker objects by their frame number
+    table.sort(filteredMarkersArray, function(a, b)
+        return a.frame < b.frame
+    end)
+
+    return filteredMarkersArray
 end
 
 --[[

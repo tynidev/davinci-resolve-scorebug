@@ -32,8 +32,9 @@ All operations are wrapped in an undo group for easy reversal if needed.
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 local udump = utils.dump
 local inspectObject = utils.inspectObject
-local GetMarkersByColor = utils.GetMarkersByColor
+local GetTimelineMarkers = utils.GetTimelineMarkers
 local formatTimeDisplay = utils.formatTimeDisplay
+local UpdateTimelineMarker = utils.UpdateTimelineMarker
 local CONFIG = utils.CONFIG
 
 -- Global variables declaration
@@ -41,9 +42,9 @@ local pm, pr, tl, fps
 local sbcomp
 local leftScoreNode, rightScoreNode, gameTimeNode
 local leftNameNode, rightNameNode -- Added variables for team name tools
-local timeMarkers, timeFrameNumbers
-local leftScoreMarkers, leftScoreFrameNumbers
-local rightScoreMarkers, rightScoreFrameNumbers
+local timeMarkers
+local leftScoreMarkers
+local rightScoreMarkers
 
 --[[
   Finds the scorebug Fusion composition in the timeline
@@ -138,20 +139,20 @@ local function Initialize()
     
     -- Get markers by color
     print("Loading time markers...")
-    timeMarkers, timeFrameNumbers = GetMarkersByColor(tl, CONFIG.GAME_MARKERS.TIME_MARKERS)
-    if #timeFrameNumbers < 4 then
-        print("[ERROR] Found only " .. #timeFrameNumbers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
+    timeMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.TIME_MARKERS })
+    if #timeMarkers < 4 then
+        print("[ERROR] Found only " .. #timeMarkers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
         return false
     end
-    print("Found " .. #timeFrameNumbers .. " time markers")
+    print("Found " .. #timeMarkers .. " time markers")
     
     print("Loading left team score markers...")
-    leftScoreMarkers, leftScoreFrameNumbers = GetMarkersByColor(tl, CONFIG.GAME_MARKERS.LEFT_TEAM)
-    print("Found " .. #leftScoreFrameNumbers .. " left team score markers")
+    leftScoreMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.LEFT_TEAM })
+    print("Found " .. #leftScoreMarkers .. " left team score markers")
     
     print("Loading right team score markers...")
-    rightScoreMarkers, rightScoreFrameNumbers = GetMarkersByColor(tl, CONFIG.GAME_MARKERS.RIGHT_TEAM)
-    print("Found " .. #rightScoreFrameNumbers .. " right team score markers")
+    rightScoreMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.RIGHT_TEAM })
+    print("Found " .. #rightScoreMarkers .. " right team score markers")
     
     return true
 end
@@ -180,37 +181,6 @@ local function GetTeamName(side)
 end
 
 --[[
-  Updates a marker's name in the timeline
-  
-  @param frame number - The frame where the marker is located
-  @param marker table - The marker data
-  @param newName string - The new name for the marker
-  @return boolean - True if successful, false otherwise
-]]
-local function UpdateMarkerName(frame, marker, newName)
-    -- Delete the original marker
-    if not tl:DeleteMarkerAtFrame(frame) then
-        print("[ERROR] Failed to delete marker at frame " .. frame)
-        return false
-    end
-    
-    -- Create a new marker with updated name
-    if not tl:AddMarker(
-        frame,              -- frameId
-        marker.color,       -- color
-        newName,            -- name
-        marker.note,        -- note
-        marker.duration,    -- duration
-        marker.customData   -- customData (if any)
-    ) then
-        print("[ERROR] Failed to add marker at frame " .. frame)
-        return false
-    end
-    
-    return true
-end
-
---[[
   Processes all score markers for the specified team
   
   @param side string - Either "LEFT" or "RIGHT" 
@@ -222,7 +192,6 @@ local function ProcessScores(side, color)
     
     -- Use pre-loaded score markers
     local markers = side:upper() == "LEFT" and leftScoreMarkers or rightScoreMarkers
-    local frameNumbers = side:upper() == "LEFT" and leftScoreFrameNumbers or rightScoreFrameNumbers
     local scoreNode = side:upper() == "LEFT" and leftScoreNode or rightScoreNode
     local score = 0
     
@@ -237,16 +206,19 @@ local function ProcessScores(side, color)
     -- Set initial score to 0
     scoreNode:SetInput("StyledText", score, 0)
 
-    -- Process each marker in order
-    for _, frame in ipairs(frameNumbers) do 
+    -- Increment score for each marker found
+    for i = 1, #markers do
+        local frame = markers[i].frame
+        local marker = markers[i]
+
         score = score + 1
         scoreNode:SetInput("StyledText", score, frame)
-        
-        -- Format the marker name with team name and score
+
+         -- Format the marker name with team name and score
         local newMarkerName = teamName .. " " .. score
         
         -- Update the marker name in the timeline
-        if UpdateMarkerName(frame, markers[frame], newMarkerName) then
+        if UpdateTimelineMarker(tl,  marker, {name = newMarkerName}) then 
             print("Frame: " .. frame .. ", Score: " .. score .. ", Updated name: " .. newMarkerName)
         else
             print("[ERROR] Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
@@ -265,15 +237,17 @@ local function SetGlobalTimes()
     
     -- Use pre-loaded time markers
     local markers = timeMarkers
-    local frameNumbers = timeFrameNumbers
     
     -- Standard time marker labels
     local timeLabels = {"FIRST", "HALF", "SECOND", "FULL"}
     
     -- Rename the markers
-    for i, frame in ipairs(frameNumbers) do
+    for i = 1, #markers do
+        local frame = markers[i].frame
+        local marker = markers[i]
+
         -- Update the marker name with standard label
-        if UpdateMarkerName(frame, markers[frame], timeLabels[i]) then
+        if UpdateTimelineMarker(tl, marker, {name = timeLabels[i]}) then 
             print("Frame: " .. frame .. ", Updated time marker name to: " .. timeLabels[i])
         else
             print("[ERROR] Frame: " .. frame .. ", Failed to update time marker name")
@@ -291,12 +265,12 @@ local function SetGlobalTimes()
     gameTimeNode:SetInput("StyledText", "00:00", 0)
     
     -- First half: 00:00 to HALF
-    local firstHalfStart = timeFrameNumbers[1]
-    local halfTimeFrame = timeFrameNumbers[2]
+    local firstHalfStart = markers[1].frame
+    local halfTimeFrame = markers[2].frame
     
     -- Second half: Continue from previous time to FULL
-    local secondHalfStart = timeFrameNumbers[3]
-    local fullTimeFrame = timeFrameNumbers[4]
+    local secondHalfStart = markers[3].frame
+    local fullTimeFrame = markers[4].frame
     
     -- Set "00:00" at first marker
     gameTimeNode:SetInput("StyledText", "00:00", firstHalfStart)
@@ -346,18 +320,19 @@ local function SetGlobalTimes()
     -- Set "FULL" at fourth marker
     gameTimeNode:SetInput("StyledText", "FULL", fullTimeFrame)
     print("Frame " .. fullTimeFrame .. ": Set time to FULL")
-    return #frameNumbers
+    return #markers
 end
 
 -- Main execution
 
 -- Initialize all required objects and variables
 if Initialize() then
-    comp:StartUndo('Set Scores')
-    local timeMarkersFound = SetGlobalTimes()
+    -- if we have everything we need, start making changes
+    sbcomp:StartUndo('Set Scores')
+    SetGlobalTimes()
     local leftFinalScore = ProcessScores("LEFT", CONFIG.GAME_MARKERS.LEFT_TEAM)
     local rightFinalScore = ProcessScores("RIGHT", CONFIG.GAME_MARKERS.RIGHT_TEAM)
-    comp:EndUndo(true)
+    sbcomp:EndUndo(true)
 
     -- Show summary
     print("[SECTION] EXECUTION SUMMARY")

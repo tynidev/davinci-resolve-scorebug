@@ -35,7 +35,7 @@ All operations are wrapped in undo groups for easy reversal if needed.
 -- Import utility functions
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 local dump = utils.dump
-local GetMarkersByColor = utils.GetMarkersByColor
+local GetTimelineMarkers = utils.GetTimelineMarkers
 local CONFIG = utils.CONFIG
 
 -- Initialize core Resolve objects
@@ -99,12 +99,13 @@ end
 local function AdjustColoredMarkers(color)
     print("Adjusting " .. color .. " markers...")
     
-    local markers, frameNumbers = GetMarkersByColor(tl, color)
+    local markers = GetTimelineMarkers(tl, {color = color})
     local adjusted = 0
     
     -- Process markers in frame order
-    for _, frame in ipairs(frameNumbers) do
-        local marker = markers[frame]
+    for i = 1, #markers do
+        local frame = markers[i].frame
+        local marker = markers[i]
         local newTiming = AdjustMarkerTiming(frame, fps)
         
         -- Delete the original marker
@@ -130,11 +131,26 @@ local function AdjustColoredMarkers(color)
     return adjusted
 end
 
+local composition = comp
+if not composition then
+    local fusion = resolve:Fusion()
+    if not fusion then
+        print("[ERROR] Failed to get Fusion")
+        return false
+    end
+
+    composition = fusion:NewComp()
+    if not composition then
+        print("[ERROR] could not create a new composition")
+        return false
+    end
+end
+
 -- Main execution
-comp:StartUndo("Adjust Markers")
+composition:StartUndo("Adjust Markers")
 local leftMarkers = AdjustColoredMarkers(CONFIG.GAME_MARKERS.LEFT_TEAM)
 local rightMarkers = AdjustColoredMarkers(CONFIG.GAME_MARKERS.RIGHT_TEAM)
-comp:EndUndo(true)
+composition:EndUndo(true)
 
 -- Summary
 print("\n========= SUMMARY =========")
