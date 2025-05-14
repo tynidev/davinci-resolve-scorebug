@@ -1,27 +1,27 @@
 --[[
 ================================================================================
-Script Name: RestoreMarkerColors.lua
+Script Name: Restore Marker Colors.lua
 Author: Tyler
 Created: May 11, 2025
-Last Modified: May 11, 2025
+Last Modified: May 14, 2025
 
 Description:
-This script restores the original colors of timeline markers that were previously
-converted to white by the WhiteMarkers.lua script. It reads the color information
-stored in each marker's note field and reverts the marker to that color.
+This script reverses the process performed by Whiteout Markers.lua, restoring
+timeline markers to their original colors based on the information stored in
+their note fields.
 
-The script:
-1. Scans the timeline for white markers with "[Original color: X]" in their notes
-2. Extracts the original color information 
-3. Restores each marker to its original color
-4. Removes the color information from the note field
-5. Provides a summary of how many markers of each color were restored
+The script performs the following actions:
+1. Scans all timeline markers for cream (white) markers 
+2. For each cream marker with "[Original color: X]" in its notes:
+   - Extracts the original color information
+   - Restores the marker to that original color
+   - Removes the color annotation from the note field
+3. Provides a detailed summary of markers restored by color
 
 Usage:
-1. Run this script from the Fusion Scripts menu after having used WhiteMarkers.lua
-2. All white markers with stored color information will be restored to their original colors
+1. Run this script when you need to restore original marker colors
+2. All cream markers with stored color information will be restored
 
-All operations are wrapped in an undo group for easy reversal if needed.
 ================================================================================
 --]]
 

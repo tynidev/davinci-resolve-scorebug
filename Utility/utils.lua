@@ -3,10 +3,33 @@
 Script Name: utils.lua
 Author: Tyler
 Created: May 11, 2025
-Last Modified: May 12, 2025
+Last Modified: May 14, 2025
 
 Description:
-A utility library containing helper functions for use in DaVinci Resolve scripts.
+A comprehensive utility library for DaVinci Resolve scripting that provides
+standardized functions for common operations in Resolve and Fusion.
+
+Core Function Categories:
+
+1. Resolve Object Management
+   - initializeCoreResolveObjects(): Creates standard Resolve objects (PM, Project, Timeline)
+   - ensureFusionComposition(): Gets current Fusion comp or creates a new one
+   - findNamedFusionCompOnTimeline(): Finds a Fusion comp by name on the timeline
+
+2. Timeline Marker Operations
+   - GetTimelineMarkers(): Gets markers with advanced filtering options
+   - UpdateTimelineMarker(): Modifies marker properties while preserving others
+
+3. Time and Display Formatting
+   - formatTimeDisplay(): Formats frames as timecode with configurable options
+
+4. Debugging Utilities
+   - dump(): Converts tables to readable string format
+   - inspectObject(): Provides detailed output of object properties
+
+This library aims to provide consistent interfaces and robust error handling
+for all common DaVinci Resolve scripting operations used by the score automation
+script collection.
 ================================================================================
 --]]
 

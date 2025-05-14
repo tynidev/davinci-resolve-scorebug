@@ -1,34 +1,33 @@
 --[[
 ================================================================================
-Script Name: Adjust Score Markers.lua
+Script Name: Score Highlights.lua
 Author: Tyler
 Created: May 11, 2025
-Last Modified: May 12, 2025
+Last Modified: May 14, 2025
 
 Description:
-This script automatically adjusts sport score markers in DaVinci Resolve to create
-highlight regions. It takes each existing score marker and:
+This script creates highlight regions for sport score events by modifying timeline
+markers. It automatically converts single-point markers into regions that show the
+lead-up to each scoring event.
 
-1. Moves the marker start point back by 15 seconds
-2. Sets the marker duration to 15 seconds
-3. This positions the end of each marker exactly where the original marker was
+For each scoring marker (blue and red), the script:
+1. Shifts the marker's position backwards by 15 seconds
+2. Sets a 15-second duration for the marker
+3. The original marker position becomes the end point of the highlight region
 
-The result is a set of markers that represent the lead-up to each scoring event,
-creating easy-to-navigate highlight regions. Editors can quickly jump between
-these extended markers to review and edit key moments in the game.
-
-The script processes markers by color, matching the same color scheme as Set Scores.lua:
-- Blue markers: Left team scoring events
-- Red markers: Right team scoring events
+Key Features:
+- Works with the colored markers created by Set Scorebug.lua
+- Preserves marker names, colors and other attributes
+- Creates consistent highlight durations suitable for sports highlight reels
+- Processes all markers of specified colors in a single operation
 
 Usage:
-1. First place markers at the exact frames where scores occur
-    - Blue for left team scores
-    - Red for right team scores
-2. Run this script to convert them into highlight regions
-3. Use Resolve's marker navigation to jump between highlight segments
+1. Run Set Scorebug.lua first to set up score markers at exact score moments
+2. Run this script to convert point markers into highlight regions
+3. Use Resolve's marker navigation to quickly locate and edit highlight segments
 
-All operations are wrapped in undo groups for easy reversal if needed.
+This script is typically run as part of the All Score Processing.lua workflow
+but can be used independently if needed.
 ================================================================================
 --]]
 

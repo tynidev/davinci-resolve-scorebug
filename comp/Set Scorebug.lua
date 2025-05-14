@@ -1,28 +1,38 @@
 --[[
 ================================================================================
-Script Name: Set Scores.lua
+Script Name: Set Scorebug.lua
 Author: Tyler Nichols
 Created: 2025
-Last Modified: May 12, 2025
+Last Modified: May 14, 2025
 
 Description:
-This script automates the updating of sports scores and time markers in DaVinci
-Resolve projects. It works by scanning timeline markers of specific colors and
-updating a scorebug Fusion composition:
-- Blue markers: Increment the left team score
-- Red markers: Increment the right team score
-- Cream markers: Set time indicators (first half, halftime, second half, full time)
+This script automatically updates a scorebug in DaVinci Resolve using timeline
+markers. It performs three main functions:
 
-The script expects a Fusion composition named "Fusion Composition 1" containing
-a tool called "MLS_Scorebug_1" with text elements "LEFT_SCORE_2" and "RIGHT_SCORE_2".
+1. Processes game time markers (cream colored) to:
+   - Rename them to standard labels (FIRST, HALF, SECOND, FULL)
+   - Set up keyframes for the game timer display showing elapsed time
+   - Add special labels at halftime and fulltime
+
+2. Processes team score markers (blue/red) to:
+   - Increment the appropriate team's score for each marker
+   - Update marker names with team name and score
+   - Create keyframes for the score displays
+
+3. Fetches team names from the scorebug composition when available
+
+Requirements:
+- A Fusion composition named "Fusion Composition 1" 
+- Text+ elements in composition: "LEFT_SCORE_2", "RIGHT_SCORE_2", "GAME_TIME_2"
+- Timeline markers: 
+    - Blue (left team scores) 
+    - Red (right team scores)
+    - 4 Cream markers for game time periods (First, Half, Second, Full)
 
 Usage:
-1. Create colored markers at frames where scores change or time periods occur
-    - Blue for left team scores
-    - Red for right team scores
-    - Cream for time markers (first half, halftime, second half, full time)
+1. Create timeline markers at points where scores change or time periods occur
 2. Run this script from the Fusion Scripts menu
-3. The script will automatically update all score values based on marker positions
+3. View the results in the scorebug composition and timeline
 
 All operations are wrapped in an undo group for easy reversal if needed.
 ================================================================================
