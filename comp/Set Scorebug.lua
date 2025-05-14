@@ -46,9 +46,10 @@ local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
   @param markers - The score markers for the team
   @param teamName - The name of the team
   @param scoreNode - The score node in the Fusion composition
+  @param frameEnd - Optional frame where the final score should be maintained
   @return number - The final score
 ]]
-local function ProcessScores(timeline, sbcomp, markers, scoreNode, teamName)
+local function ProcessScores(timeline, sbcomp, markers, scoreNode, teamName, frameEnd)
     print("[SECTION] " .. teamName .. " UPDATE TEAM SCORES")
     
     -- Clear existing keyframes
@@ -76,6 +77,12 @@ local function ProcessScores(timeline, sbcomp, markers, scoreNode, teamName)
         else
             print("[ERROR] Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
         end
+    end
+    
+    -- Add one more keyframe at the end frame to maintain the final score
+    if frameEnd and frameEnd > 0 then
+        scoreNode:SetInput("StyledText", score, frameEnd)
+        print("Frame: " .. frameEnd .. ", Score: " .. score .. " (Final score maintained)")
     end
     
     return score
@@ -289,6 +296,9 @@ local function Main()
     local deps = Initialize()
     if deps then -- if we have everything we need, start making changes
         deps.sbcomp:StartUndo('Set Scores')
+        
+        -- Get the fulltime frame for maintaining final scores
+        local fullTimeFrame = deps.timeMarkers[4].frame
     
         -- Add left team keyframes for every score marker
         local leftFinalScore = ProcessScores(
@@ -296,7 +306,8 @@ local function Main()
             deps.sbcomp,
             deps.leftScoreMarkers,
             deps.leftScoreNode,
-            GetTeamName(deps.leftNameNode, "Home")
+            GetTeamName(deps.leftNameNode, "Home"),
+            fullTimeFrame -- Add fulltime frame to maintain final score
             )
         
         -- Add Right team keyframes for every score marker
@@ -305,7 +316,8 @@ local function Main()
             deps.sbcomp,
             deps.rightScoreMarkers,
             deps.rightScoreNode,
-            GetTeamName(deps.rightNameNode, "Away")
+            GetTeamName(deps.rightNameNode, "Away"),
+            fullTimeFrame -- Add fulltime frame to maintain final score
             )
         
         -- Add game time keyframes for each second AND each game period
