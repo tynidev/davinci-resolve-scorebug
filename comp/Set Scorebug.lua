@@ -40,54 +40,6 @@ All operations are wrapped in an undo group for easy reversal if needed.
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
 
 --[[
-  Main function to execute the script
-  This function initializes all required objects and variables, processes game time
-  and score markers, and updates the scorebug accordingly.
-  
-  @return boolean - True if successful, false otherwise
-]]
-local function Main()
-    -- Initialize all required objects and variables
-    local deps = Initialize()
-    if deps then -- if we have everything we need, start making changes
-        deps.sbcomp:StartUndo('Set Scores')
-    
-        -- Add left team keyframes for every score marker
-        local leftFinalScore = ProcessScores(
-            deps.tl,
-            deps.sbcomp,
-            deps.leftScoreMarkers,
-            deps.leftScoreNode,
-            GetTeamName(deps.leftNameNode, "Home")
-            )
-        
-        -- Add Right team keyframes for every score marker
-        local rightFinalScore = ProcessScores(
-            deps.tl,
-            deps.sbcomp,
-            deps.rightScoreMarkers,
-            deps.rightScoreNode,
-            GetTeamName(deps.rightNameNode, "Away")
-            )
-        
-        -- Add game time keyframes for each second AND each game period
-        ProcessGamePeriods(deps.tl, deps.fps, deps.sbcomp, deps.timeMarkers, deps.gameTimeNode)
-
-        deps.sbcomp:EndUndo(true)
-
-        -- Show summary
-        print("[SECTION] EXECUTION SUMMARY")
-        print("Left team final score: " .. leftFinalScore)
-        print("Right team final score: " .. rightFinalScore)
-        return true
-    else
-        print("[ERROR] Set Scorebug: Failed to initialize required components")
-        print("Check the error messages above for details")
-        return false
-    end
-end
-
---[[
   Processes all score markers for the specified team
   @param timeline - The timeline object in resolve
   @param sbcomp - The scorebug Fusion composition
@@ -323,6 +275,54 @@ local function Initialize()
     print("Found " .. #deps.rightScoreMarkers .. " right team score markers")
     
     return deps
+end
+
+--[[
+  Main function to execute the script
+  This function initializes all required objects and variables, processes game time
+  and score markers, and updates the scorebug accordingly.
+  
+  @return boolean - True if successful, false otherwise
+]]
+local function Main()
+    -- Initialize all required objects and variables
+    local deps = Initialize()
+    if deps then -- if we have everything we need, start making changes
+        deps.sbcomp:StartUndo('Set Scores')
+    
+        -- Add left team keyframes for every score marker
+        local leftFinalScore = ProcessScores(
+            deps.tl,
+            deps.sbcomp,
+            deps.leftScoreMarkers,
+            deps.leftScoreNode,
+            GetTeamName(deps.leftNameNode, "Home")
+            )
+        
+        -- Add Right team keyframes for every score marker
+        local rightFinalScore = ProcessScores(
+            deps.tl,
+            deps.sbcomp,
+            deps.rightScoreMarkers,
+            deps.rightScoreNode,
+            GetTeamName(deps.rightNameNode, "Away")
+            )
+        
+        -- Add game time keyframes for each second AND each game period
+        ProcessGamePeriods(deps.tl, deps.fps, deps.sbcomp, deps.timeMarkers, deps.gameTimeNode)
+
+        deps.sbcomp:EndUndo(true)
+
+        -- Show summary
+        print("[SECTION] EXECUTION SUMMARY")
+        print("Left team final score: " .. leftFinalScore)
+        print("Right team final score: " .. rightFinalScore)
+        return true
+    else
+        print("[ERROR] Set Scorebug: Failed to initialize required components")
+        print("Check the error messages above for details")
+        return false
+    end
 end
 
 return Main() -- Execute Main and return its status
