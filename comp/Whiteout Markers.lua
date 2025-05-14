@@ -50,14 +50,14 @@ local function WhiteOutMarkers()
         return {}
     end
     
-    -- Get all markers
-    local allMarkers = tl:GetMarkers()
+    -- Get all markers using the utility function
+    local allMarkersArray = utils.GetTimelineMarkers(tl)
     
     -- Track how many markers of each color we convert
     local converted = {}
     
     -- Process each marker
-    for frame, marker in pairs(allMarkers) do
+    for _, marker in ipairs(allMarkersArray) do
         local originalColor = marker.color
 
         -- Skip already white markers
@@ -68,18 +68,11 @@ local function WhiteOutMarkers()
             -- Add color info to the note
             local newNote = "[Original color: " .. originalColor .. "]" .. (marker.note or "")
             
-            -- Delete the original marker
-            tl:DeleteMarkerAtFrame(frame)
-            
-            -- Create a new white marker with updated note
-            tl:AddMarker(
-                frame,            -- frameId
-                CONFIG.COLORS.CREAM,  -- Using CREAM color instead of hardcoded value
-                marker.name,      -- name
-                newNote,          -- note (now contains original color info)
-                marker.duration,  -- duration
-                marker.customData -- customData (if any)
-            )
+            -- Update the marker to white and prepend original color to note
+            utils.UpdateTimelineMarker(tl, marker, {
+                color = CONFIG.COLORS.CREAM,
+                note = newNote
+            })
         end
     end
     
@@ -116,12 +109,27 @@ local function PrintSummary(converted)
     print("==================================")
 end
 
+local composition = comp
+if not composition then
+    local fusion = resolve:Fusion()
+    if not fusion then
+        print("[ERROR] Failed to get Fusion")
+        return false
+    end
+
+    composition = fusion:NewComp()
+    if not composition then
+        print("[ERROR] could not create a new composition")
+        return false
+    end
+end
+
 -- Main execution
 print("Converting colored markers to white...")
-comp:StartUndo("Convert Markers to White")
+composition:StartUndo("Convert Markers to White")
 
 local converted = WhiteOutMarkers()
 PrintSummary(converted)
 
-comp:EndUndo(true)
+composition:EndUndo(true)
 print("Done! All markers have been converted to white with their original colors preserved in notes.")

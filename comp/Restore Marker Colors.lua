@@ -27,6 +27,8 @@ All operations are wrapped in an undo group for easy reversal if needed.
 
 -- Import utility functions
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
+local UpdateTimelineMarker = utils.UpdateTimelineMarker -- Import the function
+local GetTimelineMarkers = utils.GetTimelineMarkers -- Import GetTimelineMarkers
 local CONFIG = utils.CONFIG
 
 --[[
@@ -68,37 +70,31 @@ local function RestoreMarkerColors()
         return {}
     end
     
-    -- Get all markers
-    local allMarkers = tl:GetMarkers()
+    -- Get all CREAM colored markers
+    local creamMarkers = GetTimelineMarkers(tl, {color = CONFIG.COLORS.CREAM})
     
     -- Track how many markers of each color we restore
     local restored = {}
     
-    -- Process each marker
-    for frame, marker in pairs(allMarkers) do
-        -- Only process white markers
-        if marker.color == CONFIG.COLORS.CREAM then
-            local originalColor, cleanedNote = ExtractColorInfo(marker.note)
+    -- Process each cream marker
+    for _, marker in ipairs(creamMarkers) do
+        local originalColor, cleanedNote = ExtractColorInfo(marker.note)
+        
+        -- If we found color information, restore the marker
+        if originalColor then
+            -- Update the count for this color
+            restored[originalColor] = (restored[originalColor] or 0) + 1
             
-            -- If we found color information, restore the marker
-            if originalColor then
-                -- Update the count for this color
-                restored[originalColor] = (restored[originalColor] or 0) + 1
-                
-                -- Delete the white marker
-                tl:DeleteMarkerAtFrame(frame)
-                
-                -- Create a new marker with the original color
-                tl:AddMarker(
-                    frame,            -- frameId
-                    originalColor,    -- color (restored from note)
-                    marker.name,      -- name
-                    cleanedNote,      -- note (with color tag removed)
-                    marker.duration,  -- duration
-                    marker.customData -- customData (if any)
-                )
-                
-                print(string.format("Restored marker at frame %d to %s", frame, originalColor))
+            -- Prepare the updates for UpdateTimelineMarker
+            local updates = {
+                color = originalColor,
+                note = cleanedNote
+            }
+            
+            if UpdateTimelineMarker(tl, marker, updates) then
+                print(string.format("Restored marker at frame %d to %s", marker.frame, originalColor))
+            else
+                print(string.format("[ERROR] Failed to restore marker at frame %d to %s", marker.frame, originalColor))
             end
         end
     end
@@ -141,14 +137,29 @@ local function PrintSummary(restored)
     end
 end
 
+local composition = comp
+if not composition then
+    local fusion = resolve:Fusion()
+    if not fusion then
+        print("[ERROR] Failed to get Fusion")
+        return false
+    end
+
+    composition = fusion:NewComp()
+    if not composition then
+        print("[ERROR] could not create a new composition")
+        return false
+    end
+end
+
 -- Main execution
 print("Restoring original marker colors...")
-comp:StartUndo("Restore Marker Colors")
+composition:StartUndo("Restore Marker Colors")
 
 local restored = RestoreMarkerColors()
 PrintSummary(restored)
 
-comp:EndUndo(true)
+composition:EndUndo(true)
 
 if next(restored) then
     print("Done! All markers have been restored to their original colors.")

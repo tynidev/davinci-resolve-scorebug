@@ -46,31 +46,46 @@ end
 
 -- Main execution
 function Main()
+    local composition = comp
+    if not composition then
+        local fusion = resolve:Fusion()
+        if not fusion then
+            print("[ERROR] Failed to get Fusion")
+            return false
+        end
+
+        composition = fusion:NewComp()
+        if not composition then
+            print("[ERROR] could not create a new composition")
+            return false
+        end
+    end
+
     print("Starting All Score Processing workflow...")
-    comp:StartUndo("All Score Processing")
+    composition:StartUndo("All Score Processing")
     
     -- Step 1: Set the scorebug based on markers
     local step1 = RunScript("Set Scorebug")
     if not step1 then 
-        comp:EndUndo(false) 
+        composition:EndUndo(false) 
         return false
     end
     
     -- Step 2: Adjust markers to create highlight regions
     local step2 = RunScript("Score Highlights")
     if not step2 then 
-        comp:EndUndo(false) 
+        composition:EndUndo(false) 
         return false
     end
     
     -- Step 3: Convert all markers to white for a clean timeline
     local step3 = RunScript("Whiteout Markers")
     if not step3 then 
-        comp:EndUndo(false) 
+        composition:EndUndo(false) 
         return false
     end
     
-    comp:EndUndo(true)
+    composition:EndUndo(true)
     print("\n===========================================")
     print("✓ ALL SCORE PROCESSING COMPLETE")
     print("===========================================")
