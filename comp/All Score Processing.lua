@@ -32,11 +32,18 @@ local function RunScript(scriptName)
     
     -- The dofile function executes a Lua script and returns any value it returns
     local scriptPath = app:MapPath("Scripts:\\Comp\\" .. scriptName .. ".lua")
-    local success, result = pcall(dofile, scriptPath)
+    local success, scriptReturn = pcall(dofile, scriptPath)
     
     if not success then
         print("ERROR running script '" .. scriptName .. "':")
-        print(result)
+        print(scriptReturn) -- scriptReturn here is the error message from pcall
+        return false
+    end
+    
+    -- Check the actual return value from the script itself
+    -- If dofile was successful, scriptReturn is the value returned by the executed script
+    if scriptReturn == false then
+        print("ERROR: Script '" .. scriptName .. "' executed but reported an internal failure.")
         return false
     end
     
@@ -46,19 +53,11 @@ end
 
 -- Main execution
 function Main()
-    local composition = comp
+    -- Get/Ensure Fusion Composition using the utility function
+    local composition = utils.ensureFusionComposition()
     if not composition then
-        local fusion = resolve:Fusion()
-        if not fusion then
-            print("[ERROR] Failed to get Fusion")
-            return false
-        end
-
-        composition = fusion:NewComp()
-        if not composition then
-            print("[ERROR] could not create a new composition")
-            return false
-        end
+        print("[ERROR] Failed to get or create Fusion composition via utility function in All Score Processing.lua.")
+        return false
     end
 
     print("Starting All Score Processing workflow...")

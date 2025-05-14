@@ -34,37 +34,6 @@ All operations are wrapped in undo groups for easy reversal if needed.
 
 -- Import utility functions
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
-local dump = utils.dump
-local GetTimelineMarkers = utils.GetTimelineMarkers
-local CONFIG = utils.CONFIG
-
--- Initialize core Resolve objects
-local pm = resolve:GetProjectManager()
-if not pm then
-    print("[ERROR] Failed to get Project Manager")
-    return
-end
-
-local pr = pm:GetCurrentProject()
-if not pr then
-    print("[ERROR] No project is currently open")
-    return
-end
-
-local tl = pr:GetCurrentTimeline()
-if not tl then
-    print("[ERROR] No timeline is currently active")
-    return
-end
-
--- Get the project frame rate
-local fps = pr:GetSetting("timelineFrameRate")
-if not fps or fps == 0 then 
-    print("[ERROR] Unable to determine project frame rate, using default of 24fps")
-    return
-else
-    print("Project frame rate: " .. fps .. " fps")
-end
 
 --[[
   Adjusts a marker's start time to 15 seconds prior and sets its duration to 15 seconds
@@ -74,7 +43,7 @@ end
   @param fps number - The project's frame rate (frames per second)
   @return table - Contains the new start frame and duration in frames
 ]]
-local function AdjustMarkerTiming(markerFrame, fps)
+local function ComputeNewMarkerTiming(markerFrame, fps)
     -- Set the duration to 15 seconds in frames
     local durationFrames = math.floor(15 * fps)
     
@@ -93,68 +62,70 @@ end
 --[[
   Applies the marker timing adjustment to all markers of a specific color
   
+  @param resolveObjs table - Table containing initialized Resolve objects from utils.initializeCoreResolveObjects()
   @param color string - The marker color to adjust (e.g. "Red", "Blue")
   @return number - The number of markers adjusted
 ]]
-local function AdjustColoredMarkers(color)
+local function AdjustColoredMarkers(resolveObjs, color)
+    -- Validate input
+    if not resolveObjs or not resolveObjs.tl then
+        print("[ERROR] AdjustColoredMarkers: Invalid or missing resolveObjs parameter")
+        return 0
+    end
+    
     print("Adjusting " .. color .. " markers...")
     
-    local markers = GetTimelineMarkers(tl, {color = color})
+    local markers = utils.GetTimelineMarkers(resolveObjs.tl, {color = color})
     local adjusted = 0
     
     -- Process markers in frame order
     for i = 1, #markers do
-        local frame = markers[i].frame
         local marker = markers[i]
-        local newTiming = AdjustMarkerTiming(frame, fps)
+        local originalFrame = marker.frame
+        local newTiming = ComputeNewMarkerTiming(originalFrame, resolveObjs.fps)
         
-        -- Delete the original marker
-        tl:DeleteMarkerAtFrame(frame)
-        
-        -- Create a new marker with the adjusted timing
-        tl:AddMarker(
-            newTiming.startFrame,         -- frameId
-            marker.color,                 -- color
-            marker.name,                  -- name
-            marker.note,                  -- note
-            newTiming.duration,           -- duration
-            marker.customData             -- customData (if any)
-        )
-        
-        print(string.format("Adjusted marker at frame %d → now starts at frame %d with %d frame duration", 
-            frame, newTiming.startFrame, newTiming.duration))
-        
-        adjusted = adjusted + 1
+        if utils.UpdateTimelineMarker(resolveObjs.tl, marker, {
+            frame = newTiming.startFrame,
+            duration = newTiming.duration
+        }) then
+            print(string.format("Adjusted marker '%s' (originally at frame %d) → now starts at frame %d with %d frame duration", 
+                marker.name or "Unnamed", originalFrame, newTiming.startFrame, newTiming.duration))
+            adjusted = adjusted + 1
+        else
+            print(string.format("[ERROR] Failed to adjust marker '%s' (originally at frame %d)", 
+                marker.name or "Unnamed", originalFrame))
+        end
     end
     
     print("Total " .. color .. " markers adjusted: " .. adjusted)
     return adjusted
 end
 
-local composition = comp
-if not composition then
-    local fusion = resolve:Fusion()
-    if not fusion then
-        print("[ERROR] Failed to get Fusion")
+-- Main execution
+local function Main()
+    -- Initialize core Resolve objects
+    resolveObjs = utils.initializeCoreResolveObjects() -- Ensure resolveObjs is local or assigned if not already
+    if not resolveObjs then
+        print("[ERROR] Score Highlights: Failed to initialize Resolve objects.")
         return false
     end
 
-    composition = fusion:NewComp()
+    composition = utils.ensureFusionComposition() -- Ensure composition is local or assigned
     if not composition then
-        print("[ERROR] could not create a new composition")
+        print("[ERROR] Score Highlights: Failed to get or create Fusion composition via utility function.")
         return false
-    end
+    end    composition:StartUndo("Adjust Markers")
+    local leftMarkers = AdjustColoredMarkers(resolveObjs, utils.CONFIG.GAME_MARKERS.LEFT_TEAM)
+    local rightMarkers = AdjustColoredMarkers(resolveObjs, utils.CONFIG.GAME_MARKERS.RIGHT_TEAM)
+    composition:EndUndo(true)
+
+    -- Summary
+    print("\n========= SUMMARY =========")
+    print("Left team markers adjusted: " .. leftMarkers)
+    print("Right team markers adjusted: " .. rightMarkers)
+    print("Total markers adjusted: " .. (leftMarkers + rightMarkers))
+    print("============================")
+    return true
 end
 
--- Main execution
-composition:StartUndo("Adjust Markers")
-local leftMarkers = AdjustColoredMarkers(CONFIG.GAME_MARKERS.LEFT_TEAM)
-local rightMarkers = AdjustColoredMarkers(CONFIG.GAME_MARKERS.RIGHT_TEAM)
-composition:EndUndo(true)
-
--- Summary
-print("\n========= SUMMARY =========")
-print("Left team markers adjusted: " .. leftMarkers)
-print("Right team markers adjusted: " .. rightMarkers)
-print("Total markers adjusted: " .. (leftMarkers + rightMarkers))
-print("============================")
+return Main() -- Execute Main and return its status

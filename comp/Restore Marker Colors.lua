@@ -27,9 +27,6 @@ All operations are wrapped in an undo group for easy reversal if needed.
 
 -- Import utility functions
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
-local UpdateTimelineMarker = utils.UpdateTimelineMarker -- Import the function
-local GetTimelineMarkers = utils.GetTimelineMarkers -- Import GetTimelineMarkers
-local CONFIG = utils.CONFIG
 
 --[[
   Extracts original color information from a marker note
@@ -52,26 +49,18 @@ end
 --[[
   Restores the original color of all white markers that contain color information in notes
   
+  @param resolveObjs table - Table containing initialized Resolve objects from utils.initializeCoreResolveObjects()
   @return table - Contains counts of restored markers by color
 ]]
-local function RestoreMarkerColors()
-    -- Access the current project and timeline
-    local pm = resolve:GetProjectManager()
-    local pr = pm:GetCurrentProject()
-    
-    if not pr then
-        print("Error: No project is currently open")
-        return {}
-    end
-    
-    local tl = pr:GetCurrentTimeline()
-    if not tl then
-        print("Error: No timeline is currently active")
+local function RestoreMarkerColors(resolveObjs)
+    -- Validate input
+    if not resolveObjs or not resolveObjs.tl then
+        print("[ERROR] RestoreMarkerColors: Invalid or missing resolveObjs parameter")
         return {}
     end
     
     -- Get all CREAM colored markers
-    local creamMarkers = GetTimelineMarkers(tl, {color = CONFIG.COLORS.CREAM})
+    local creamMarkers = utils.GetTimelineMarkers(resolveObjs.tl, {color = utils.CONFIG.COLORS.CREAM})
     
     -- Track how many markers of each color we restore
     local restored = {}
@@ -91,7 +80,7 @@ local function RestoreMarkerColors()
                 note = cleanedNote
             }
             
-            if UpdateTimelineMarker(tl, marker, updates) then
+            if utils.UpdateTimelineMarker(resolveObjs.tl, marker, updates) then
                 print(string.format("Restored marker at frame %d to %s", marker.frame, originalColor))
             else
                 print(string.format("[ERROR] Failed to restore marker at frame %d to %s", marker.frame, originalColor))
@@ -137,26 +126,27 @@ local function PrintSummary(restored)
     end
 end
 
-local composition = comp
-if not composition then
-    local fusion = resolve:Fusion()
-    if not fusion then
-        print("[ERROR] Failed to get Fusion")
-        return false
-    end
-
-    composition = fusion:NewComp()
+-- Wrap execution in a Main function that returns success/failure status
+local function Main()
+    -- Get/Ensure Fusion Composition
+    local composition = utils.ensureFusionComposition()
     if not composition then
-        print("[ERROR] could not create a new composition")
+        print("[ERROR] Restore Marker Colors: Failed to get or create Fusion composition via utility function.")
         return false
     end
-end
 
 -- Main execution
+-- Access core Resolve objects for RestoreMarkerColors function
+local resolveObjs = utils.initializeCoreResolveObjects()
+if not resolveObjs then
+    print("[ERROR] Restore Marker Colors: Failed to initialize Resolve objects.")
+    return false
+end
+
 print("Restoring original marker colors...")
 composition:StartUndo("Restore Marker Colors")
 
-local restored = RestoreMarkerColors()
+local restored = RestoreMarkerColors(resolveObjs) -- Now passing resolveObjs as parameter
 PrintSummary(restored)
 
 composition:EndUndo(true)
@@ -164,3 +154,8 @@ composition:EndUndo(true)
 if next(restored) then
     print("Done! All markers have been restored to their original colors.")
 end
+
+    return true
+end
+
+return Main() -- Execute Main and return its status

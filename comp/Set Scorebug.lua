@@ -30,40 +30,15 @@ All operations are wrapped in an undo group for easy reversal if needed.
 
 -- Import utility functions
 local utils = dofile(app:MapPath("Scripts:\\Utility\\utils.lua"))
-local udump = utils.dump
-local inspectObject = utils.inspectObject
-local GetTimelineMarkers = utils.GetTimelineMarkers
-local formatTimeDisplay = utils.formatTimeDisplay
-local UpdateTimelineMarker = utils.UpdateTimelineMarker
-local CONFIG = utils.CONFIG
 
 -- Global variables declaration
 local pm, pr, tl, fps
-local sbcomp
+local sbcomp -- This will be the Fusion comp found on the timeline
 local leftScoreNode, rightScoreNode, gameTimeNode
 local leftNameNode, rightNameNode -- Added variables for team name tools
 local timeMarkers
 local leftScoreMarkers
 local rightScoreMarkers
-
---[[
-  Finds the scorebug Fusion composition in the timeline
-  
-  @return fusion_composition or nil if not found
-]]
-local function findScorebugComp()     
-    for i = 1, tl:GetTrackCount("video"), 1 do
-        local tli = tl:GetItemListInTrack("video", i)
-        for x = 1, #tli, 1 do
-            if(tli[x]:GetName() == CONFIG.COMPOSITION_NAME) then
-                return tli[x]:GetFusionCompByIndex(1)
-            end
-        end
-    end
-    
-    print("[WARNING] Could not find '" .. CONFIG.COMPOSITION_NAME .. "' in timeline")
-    return nil
-end
 
 --[[
   Initializes all required objects and variables
@@ -72,74 +47,56 @@ end
 ]]
 local function Initialize()
     print("[SECTION] INITIALIZATION")
-    -- Initialize core Resolve objects
-    pm = resolve:GetProjectManager()
-    if not pm then
-        print("[ERROR] Failed to get Project Manager")
-        return false
+    -- Initialize core Resolve objects using the utility function
+    local resolveObjs = utils.initializeCoreResolveObjects()
+    if not resolveObjs then
+        return false -- Exit if initialization failed
     end
-
-    pr = pm:GetCurrentProject()
-    if not pr then
-        print("[ERROR] No project is currently open")
-        return false
-    end
-
-    tl = pr:GetCurrentTimeline()
-    if not tl then
-        print("[ERROR] No timeline is currently active")
-        return false
-    end
-
-    -- Calculate project frame rate (used for time calculations)
-    fps = pr:GetSetting("timelineFrameRate")
-    if not fps or fps == 0 then
-        print("[ERROR] Unable to determine project frame rate, using default of 24fps")
-        return false
-    else
-        print("Project frame rate: " .. fps .. " fps")
-    end
+    pm = resolveObjs.pm
+    pr = resolveObjs.pr
+    tl = resolveObjs.tl
+    fps = resolveObjs.fps
     
-    -- Find and store scorebug composition
-    sbcomp = findScorebugComp()
+    -- Find and store scorebug composition using the utility function
+    sbcomp = utils.findNamedFusionCompOnTimeline(tl, utils.CONFIG.COMPOSITION_NAME)
     if not sbcomp then
-        print("[ERROR] Could not find scorebug composition")
+        print("[ERROR] Could not find scorebug composition named '" .. utils.CONFIG.COMPOSITION_NAME .. "' using utility function.")
         return false
     end
     
     -- Find and store required tools in the scorebug composition
-    leftScoreNode = sbcomp:FindTool(CONFIG.LEFT_SCORE_ELEMENT)
+    leftScoreNode = sbcomp:FindTool(utils.CONFIG.LEFT_SCORE_ELEMENT)
     if not leftScoreNode then
-        print("[ERROR] Could not find left score element '" .. CONFIG.LEFT_SCORE_ELEMENT .. "'")
+        print("[ERROR] Could not find left score element '" .. utils.CONFIG.LEFT_SCORE_ELEMENT .. "'")
         return false
     end
     
-    rightScoreNode = sbcomp:FindTool(CONFIG.RIGHT_SCORE_ELEMENT)
+    rightScoreNode = sbcomp:FindTool(utils.CONFIG.RIGHT_SCORE_ELEMENT)
     if not rightScoreNode then
-        print("[ERROR] Could not find right score element '" .. CONFIG.RIGHT_SCORE_ELEMENT .. "'")
+        print("[ERROR] Could not find right score element '" .. utils.CONFIG.RIGHT_SCORE_ELEMENT .. "'")
         return false
     end
     
-    gameTimeNode = sbcomp:FindTool(CONFIG.GAME_TIME_ELEMENT)
+    gameTimeNode = sbcomp:FindTool(utils.CONFIG.GAME_TIME_ELEMENT)
     if not gameTimeNode then
-        print("[ERROR] Could not find game time element '" .. CONFIG.GAME_TIME_ELEMENT .. "'")
+        print("[ERROR] Could not find game time element '" .. utils.CONFIG.GAME_TIME_ELEMENT .. "'")
         return false
     end
     
     -- Find and store team name elements
-    leftNameNode = sbcomp:FindTool(CONFIG.LEFT_NAME_ELEMENT)
+    leftNameNode = sbcomp:FindTool(utils.CONFIG.LEFT_NAME_ELEMENT)
     if not leftNameNode then
-        print("[WARNING] Could not find left team name element '" .. CONFIG.LEFT_NAME_ELEMENT .. "'")
+        print("[WARNING] Could not find left team name element '" .. utils.CONFIG.LEFT_NAME_ELEMENT .. "'")
     end
     
-    rightNameNode = sbcomp:FindTool(CONFIG.RIGHT_NAME_ELEMENT)
+    rightNameNode = sbcomp:FindTool(utils.CONFIG.RIGHT_NAME_ELEMENT)
     if not rightNameNode then
-        print("[WARNING] Could not find right team name element '" .. CONFIG.RIGHT_NAME_ELEMENT .. "'")
+        print("[WARNING] Could not find right team name element '" .. utils.CONFIG.RIGHT_NAME_ELEMENT .. "'")
     end
     
     -- Get markers by color
     print("Loading time markers...")
-    timeMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.TIME_MARKERS })
+    timeMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.TIME_MARKERS })
     if #timeMarkers < 4 then
         print("[ERROR] Found only " .. #timeMarkers .. " time markers. Need at least 4 time markers (First half, Half time, Second half, Full time)")
         return false
@@ -147,11 +104,11 @@ local function Initialize()
     print("Found " .. #timeMarkers .. " time markers")
     
     print("Loading left team score markers...")
-    leftScoreMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.LEFT_TEAM })
+    leftScoreMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.LEFT_TEAM })
     print("Found " .. #leftScoreMarkers .. " left team score markers")
     
     print("Loading right team score markers...")
-    rightScoreMarkers = GetTimelineMarkers(tl, { color = CONFIG.GAME_MARKERS.RIGHT_TEAM })
+    rightScoreMarkers = utils.GetTimelineMarkers(tl, { color = utils.CONFIG.GAME_MARKERS.RIGHT_TEAM })
     print("Found " .. #rightScoreMarkers .. " right team score markers")
     
     return true
@@ -218,7 +175,7 @@ local function ProcessScores(side, color)
         local newMarkerName = teamName .. " " .. score
         
         -- Update the marker name in the timeline
-        if UpdateTimelineMarker(tl,  marker, {name = newMarkerName}) then 
+        if utils.UpdateTimelineMarker(tl,  marker, {name = newMarkerName}) then 
             print("Frame: " .. frame .. ", Score: " .. score .. ", Updated name: " .. newMarkerName)
         else
             print("[ERROR] Frame: " .. frame .. ", Score: " .. score .. ", Failed to update marker name")
@@ -247,10 +204,10 @@ local function SetGlobalTimes()
         local marker = markers[i]
 
         -- Update the marker name with standard label
-        if UpdateTimelineMarker(tl, marker, {name = timeLabels[i]}) then 
-            print("Frame: " .. frame .. ", Updated time marker name to: " .. timeLabels[i])
+        if utils.UpdateTimelineMarker(tl, marker, {name = timeLabels[i]}) then 
+            print("Frame " .. frame .. ": Updated time marker name to: " .. timeLabels[i])
         else
-            print("[ERROR] Frame: " .. frame .. ", Failed to update time marker name")
+            print("[ERROR] Frame " .. frame .. ": Failed to update time marker name")
         end
     end
     
@@ -287,7 +244,7 @@ local function SetGlobalTimes()
         if currentFrame >= halfTimeFrame then break end
         
         -- Format time using the utility function
-        local timeDisplay = formatTimeDisplay(i)
+        local timeDisplay = utils.formatTimeDisplay(i)
         
         gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
     end
@@ -297,7 +254,7 @@ local function SetGlobalTimes()
     print("Frame " .. halfTimeFrame .. ": Set time to HALF")
 
     -- Set time to last value at second half start
-    local timeDisplay = formatTimeDisplay(totalSeconds)
+    local timeDisplay = utils.formatTimeDisplay(totalSeconds)
     gameTimeNode:SetInput("StyledText", timeDisplay, secondHalfStart)
     print("Frame " .. secondHalfStart .. ": Set time to " .. timeDisplay)
     
@@ -312,7 +269,7 @@ local function SetGlobalTimes()
         if currentFrame >= fullTimeFrame then break end
         
         -- Continue from previous time value using utility function
-        local timeDisplay = formatTimeDisplay(lastTimeSeconds + i)
+        local timeDisplay = utils.formatTimeDisplay(lastTimeSeconds + i)
         
         gameTimeNode:SetInput("StyledText", timeDisplay, currentFrame)
     end
@@ -325,20 +282,26 @@ end
 
 -- Main execution
 
--- Initialize all required objects and variables
-if Initialize() then
-    -- if we have everything we need, start making changes
-    sbcomp:StartUndo('Set Scores')
-    SetGlobalTimes()
-    local leftFinalScore = ProcessScores("LEFT", CONFIG.GAME_MARKERS.LEFT_TEAM)
-    local rightFinalScore = ProcessScores("RIGHT", CONFIG.GAME_MARKERS.RIGHT_TEAM)
-    sbcomp:EndUndo(true)
+local function Main()
+    -- Initialize all required objects and variables
+    if Initialize() then
+        -- if we have everything we need, start making changes
+        sbcomp:StartUndo('Set Scores')
+        SetGlobalTimes()
+        local leftFinalScore = ProcessScores("LEFT", utils.CONFIG.GAME_MARKERS.LEFT_TEAM)
+        local rightFinalScore = ProcessScores("RIGHT", utils.CONFIG.GAME_MARKERS.RIGHT_TEAM)
+        sbcomp:EndUndo(true)
 
-    -- Show summary
-    print("[SECTION] EXECUTION SUMMARY")
-    print("Left team final score: " .. leftFinalScore)
-    print("Right team final score: " .. rightFinalScore)  
-else
-    print("[ERROR] Failed to initialize required components")
-    print("Check the error messages above for details")
+        -- Show summary
+        print("[SECTION] EXECUTION SUMMARY")
+        print("Left team final score: " .. leftFinalScore)
+        print("Right team final score: " .. rightFinalScore)
+        return true
+    else
+        print("[ERROR] Set Scorebug: Failed to initialize required components")
+        print("Check the error messages above for details")
+        return false
+    end
 end
+
+return Main() -- Execute Main and return its status

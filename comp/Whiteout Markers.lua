@@ -32,24 +32,17 @@ local CONFIG = utils.CONFIG
 --[[
   Converts all timeline markers to white while preserving their original color in notes
   
+  @param resolveObjs table - Table containing initialized Resolve objects from utils.initializeCoreResolveObjects()
   @return table - Contains counts of converted markers by original color
 ]]
-local function WhiteOutMarkers()
-    -- Access the current project and timeline
-    local pm = resolve:GetProjectManager()
-    local pr = pm:GetCurrentProject()
-    
-    if not pr then
-        print("Error: No project is currently open")
+local function WhiteOutMarkers(resolveObjs)
+    -- Validate input
+    if not resolveObjs or not resolveObjs.tl then
+        print("[ERROR] WhiteOutMarkers: Invalid or missing resolveObjs parameter")
         return {}
     end
-    
-    local tl = pr:GetCurrentTimeline()
-    if not tl then
-        print("Error: No timeline is currently active")
-        return {}
-    end
-    
+    local tl = resolveObjs.tl
+
     -- Get all markers using the utility function
     local allMarkersArray = utils.GetTimelineMarkers(tl)
     
@@ -109,27 +102,30 @@ local function PrintSummary(converted)
     print("==================================")
 end
 
-local composition = comp
-if not composition then
-    local fusion = resolve:Fusion()
-    if not fusion then
-        print("[ERROR] Failed to get Fusion")
+local function Main()
+    -- Get/Ensure Fusion Composition using the utility function
+    local composition = utils.ensureFusionComposition()
+    if not composition then
+        print("[ERROR] Whiteout Markers: Failed to get or create Fusion composition via utility function.")
         return false
     end
 
-    composition = fusion:NewComp()
-    if not composition then
-        print("[ERROR] could not create a new composition")
+    -- Access core Resolve objects for WhiteOutMarkers function
+    local resolveObjs = utils.initializeCoreResolveObjects()
+    if not resolveObjs then
+        print("[ERROR] Whiteout Markers: Failed to initialize Resolve objects.")
         return false
-    end
+    end    print("Converting colored markers to white...")
+    composition:StartUndo("Convert Markers to White")
+
+    -- Pass resolveObjs to WhiteOutMarkers directly
+    local converted = WhiteOutMarkers(resolveObjs) -- Now taking resolveObjs as parameter
+
+    PrintSummary(converted)
+
+    composition:EndUndo(true)
+    print("Done! All markers have been converted to white with their original colors preserved in notes.")
+    return true
 end
 
--- Main execution
-print("Converting colored markers to white...")
-composition:StartUndo("Convert Markers to White")
-
-local converted = WhiteOutMarkers()
-PrintSummary(converted)
-
-composition:EndUndo(true)
-print("Done! All markers have been converted to white with their original colors preserved in notes.")
+return Main()
